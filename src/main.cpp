@@ -292,6 +292,7 @@ bool instruction(Husky& Husky)
     std::cout << "Hello, this program has two functions. Please enter 1 or 2.\n";
     std::cout << "1) Specify movement and direction to Husky.\n";
     std::cout << "2) Specify location for Husky to travel to.\n";
+    std::cout << "3) To test Husky movements.\n";
     std::cout << "Any other number => Exit\n";
     while(!(std::cin >> command))
     {
@@ -377,6 +378,25 @@ bool instruction(Husky& Husky)
         }
 
         Husky.smoothmove(goto_x, goto_y, error);
+    }
+
+    else if(command == 3)
+    {
+        ros::NodeHandle n; // Create its specific node handler
+        ros::Publisher publisher = n.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel",1);
+        geometry_msgs::Twist vel_msg;
+
+        vel_msg.angular.z = 0.1;
+
+        double finaltime = ros::Time::now().toSec() + 10;
+
+        while (ros::Time::now().toSec() <= finaltime)
+        {
+            publisher.publish(vel_msg);
+        }
+
+        vel_msg.angular.z = 0;
+        publisher.publish(vel_msg);
     }
 
     else // entered random number, exit
