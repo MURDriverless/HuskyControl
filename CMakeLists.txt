@@ -19,6 +19,9 @@ include_directories(
 )
 
 add_executable(husky_terminal_control 
-	src/main.cpp)
+	src/main.cpp
+  src/terminalcontrol.cpp
+  src/terminalcontrol.h
+  )
 
 target_link_libraries(husky_terminal_control ${catkin_LIBRARIES})
