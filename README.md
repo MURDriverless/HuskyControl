@@ -28,5 +28,6 @@ to transfer to your local directory where terminal is opened or cd to,
 `scp administrator@192.168.131.1:~/<directorypath> .`, use -r to move folders
   
 # To Do
-Pure Pursuit with slow lap track
-ROS Master/Slave setup so won't mess up Husky's original files
+1. Pure Pursuit with slow lap track
+2. Backup whole drive of Husky
+3. ROS Master/Slave setup so won't mess up Husky's original files
