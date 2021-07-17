@@ -8,7 +8,7 @@ The following functions are implemented
 2) Specify a specific spot (goal) the Husky should go to
 
 ## To test in simulations
-1. Install [husky simulator package](wiki.ros.org/husky_gazebo/Tutorials/Simulating Husky) and [RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
+1. Install [husky simulator package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
 2. Clone this package, then build it with `catkin build`
 3. `source devel/setup.bash` then `roslaunch husky_terminal_control husky_terminal_control.launch`
 
