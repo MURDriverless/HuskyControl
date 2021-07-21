@@ -5,7 +5,7 @@
 #include <vector>  
 #include <fstream>
 #include <sstream>
-#include <mur_common/path_msg.h>
+#include "mur_common/path_msg.h"
 
 #define PATH_TOPIC "/mur/planner/path"
 
@@ -16,9 +16,10 @@ mur_common::path_msg spin(std::vector<float> &x, std::vector<float> &y)
     
     //publish path
     mur_common::path_msg msg;
-    msg.header.frame = "map";
+    msg.header.frame_id = "map";
     msg.x = x;
     msg.y = y;
+
     return msg;
 
 }
@@ -39,8 +40,13 @@ int main(int argc, char **argv)
     std::vector<float> nums;
     float num;
     int h = 0;
+    std::vector<float> x,y;
+    x.reserve(500);
+    y.reserve(500);
+    nums.reserve(1000);
     while (!myFile.eof())
     {
+        
         std::getline(myFile,line,'\n');
     
         for (auto c:line)
@@ -67,7 +73,7 @@ int main(int argc, char **argv)
         nums.push_back(num);
 
         std::cout<<"commas: " << h << "\n\n nums size: "<<nums.size()<< std::endl;
-        std::vector<float> x,y;
+        
         int sz = nums.size()/3;
         for(int i=0; i<sz;i++)
         {
@@ -81,9 +87,14 @@ int main(int argc, char **argv)
         }
 
         //publish
-        msg = spin(x,y);
+        mur_common::path_msg msg = spin(x,y);
         pub_path.publish(msg);
         ros::Duration(0.05).sleep();
+
+        //clear vectors
+        x.clear();
+        y.clear();
+        nums.clear();
     }
 
     
