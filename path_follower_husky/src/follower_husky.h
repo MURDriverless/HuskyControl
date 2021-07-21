@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <vector>
 #include "path_point.h"
+#include <nav_msgs/Path.h>
 
 
 #define PI 3.14159265359
@@ -32,12 +33,15 @@
 #define LFV  0.1  ///// look forward gain
 #define LFC  3.5    ///// look ahead distance
 #define V_CONST 1.0 //constant velocity 1m/s (for now)
-#define MAX_V 1.0
-
+#define MAX_V 0.6 //1.0
+#define MAX_W 30
+#define ERRL 0.5
+#define ERRA 0.01
 
 #define ODOM_TOPIC "/odometry/filtered" //"/mur/slam/Odom"
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
 #define PATH_TOPIC "/mur/planner/path"
+#define PATH_VIZ_TOPIC "/mur/planner/path_viz"
 // #define CONTROL_TOPIC "/mur/control/actuation"
 // #define ACCEL_TOPIC "/mur/accel_desired"
 // #define STEER_TOPIC "/mur/control_desired"
@@ -59,6 +63,7 @@ private:
     ros::Publisher pub_accel;
     ros::Publisher pub_steer;
     ros::Publisher pub_target;
+    ros::Publisher pub_path_viz;
 
     float max_v;
     float max_w;
@@ -72,25 +77,26 @@ private:
     float car_yaw;
     bool odom_msg_received = false;
     bool new_centre_points = false;
-    float rearX;
-    float rearY;
+    // float rearX;
+    // float rearY;
 
     std::vector<float> path_x;
     std::vector<float> path_y;
     bool path_msg_received = false;
+    bool newGP = false;
+    
 
     std::vector<PathPoint> centre_points; //centre line points of race tack
     std::vector<PathPoint> centre_splined;
-    int index = -1; //centre splined index
+    int index;//centre splined index
     int oldIndex = -1;
     std::vector<float> xp;
     std::vector<float> yp;
     std::vector<float> T;
 
-    float lin_velocity = 0;
-    float ang_velocity = 0;
-    PathPoint p;
-
+    float lin_velocity=0;
+    float ang_velocity=0;
+    
     void waitForMsgs();
     int launchSubscribers();
     int launchPublishers();
@@ -106,7 +112,7 @@ private:
     float getAngleFromCar(PathPoint);
     void clearVars();
     PathPoint getGoalPoint();
-
+    void pushPathViz();
     float getSign(float&);
 };
 
