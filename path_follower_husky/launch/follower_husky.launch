@@ -1,0 +1,34 @@
+<launch>
+    <!--################# Args ###################-->
+    <!-- 
+        For use on CLI e.g. "roslaunch mursim_gazebo perception:=false"
+    -->
+
+    <arg name="node_start_delay" default="5.0"/>
+    <arg name="gazebo" default="true"/>
+    <arg name="rviz" default="true"/>
+  
+	<arg name="vel" default="1.0"/>
+	<arg name="ang" default="30.0"/>
+    <arg name="lingain" default="0.5"/> 
+    <arg name="anggain" default="1.0"/>
+
+    <!--############## Husky Gazebo ##############-->
+    <group if="$(arg gazebo)">
+		<!-- <include file="$(find husky_gazebo)/launch/husky_playpen.launch"/> -->
+        <include file="$(find husky_gazebo)/launch/husky_empty_world.launch"/>
+	</group>
+    
+    <!--################# RVIZ ###################-->
+    <group if="$(arg rviz)">
+		<include file="$(find husky_viz)/launch/view_robot.launch"/>
+        <include file="$(find path_publisher)/launch/path_pub.launch"/>
+    
+	</group>
+    
+    <!--################ Package #################-->
+    <node pkg="path_follower_husky" type="path_follower_husky" name="followerNode" output="screen" 
+        launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " 
+        args="$(arg vel) $(arg ang) $(arg lingain) $(arg anggain)"/>
+
+</launch>
