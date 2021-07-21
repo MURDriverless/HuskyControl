@@ -9,6 +9,8 @@
 
 #define PATH_TOPIC "/mur/planner/path"
 
+//std::string fileName;
+
 mur_common::path_msg spin(std::vector<float> &x, std::vector<float> &y)
 {
     if (ros::ok())
@@ -28,13 +30,16 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "pathNodes");
     ros:: NodeHandle n;
+
+    //n.getParam("path_file",fileName);
+
+
+
     ros::Publisher pub_path;
     pub_path = n.advertise<mur_common::path_msg>(PATH_TOPIC,1);
     ROS_INFO_STREAM("Path publisher launched!");
 
-//this part reads and sorts the csv file
-    std::ifstream myFile("path0.csv"); 
-    std::cout<<"line"<<std::endl;
+//this part reads and sorts the csv file 
     std::string line;
     std::string temp;
     std::vector<float> nums;
@@ -44,15 +49,22 @@ int main(int argc, char **argv)
     x.reserve(500);
     y.reserve(500);
     nums.reserve(1000);
+    std::ifstream myFile;
+    myFile.open("path0.csv");
     while (!myFile.eof())
     {
         
         std::getline(myFile,line,'\n');
+        std::cout<<" "<<std::endl;
     
         for (auto c:line)
         {
-            if (c == '%')
+            if (c == 't')
+            {
+                temp.clear();
                 break; //skip first line
+            }
+                
             if (c == ',')
             {
                 h++; //comma counter
@@ -72,7 +84,7 @@ int main(int argc, char **argv)
         }
         nums.push_back(num);
 
-        std::cout<<"commas: " << h << "\n\n nums size: "<<nums.size()<< std::endl;
+       // std::cout<<"commas: " << h << "\n\n nums size: "<<nums.size()<< std::endl;
         
         int sz = nums.size()/3;
         for(int i=0; i<sz;i++)
@@ -95,7 +107,9 @@ int main(int argc, char **argv)
         x.clear();
         y.clear();
         nums.clear();
+        line.clear();
     }
+    myFile.close();
 
     
  
