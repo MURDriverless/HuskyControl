@@ -29,7 +29,6 @@ void HuskyFollower::waitForMsgs()
 void HuskyFollower::spin()
 {
     waitForMsgs();
-    accelerationControl();
     steeringControl();
     publishCtrl();
     clearVars();
@@ -199,7 +198,15 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "HuskyFollower"); 
     ros::NodeHandle n;
        
-        HuskyFollower follower(n);
+         // Get parameters from CLI
+    float max_v = atof(argv[1]);
+    float max_w = atof(argv[2]);
+    float lingain = atof(argv[3]);
+    float anggain = atof(argv[4]);
+    
+    //Initialize Husky Object
+    
+    HuskyFollower follower(n,max_v, max_w, lingain, anggain);
         //ros::Rate freq(20);
 	
 	    while (ros::ok())
