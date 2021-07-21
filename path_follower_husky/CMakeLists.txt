@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(path_follower_husky)
 
-cmake_minimum_required(VERSION 3.0.2)
-project(path_follower)
-
-
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   nav_msgs
