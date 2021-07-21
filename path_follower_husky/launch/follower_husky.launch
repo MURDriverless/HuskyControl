@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
     <!--################# Args ###################-->
     <!-- 
@@ -8,7 +9,7 @@
     <arg name="gazebo" default="true"/>
     <arg name="rviz" default="true"/>
   
-	<arg name="vel" default="1.0"/>
+	<arg name="vel" default="0.7"/>
 	<arg name="ang" default="30.0"/>
     <arg name="lingain" default="0.5"/> 
     <arg name="anggain" default="1.0"/>
@@ -21,9 +22,7 @@
     
     <!--################# RVIZ ###################-->
     <group if="$(arg rviz)">
-		<include file="$(find husky_viz)/launch/view_robot.launch"/>
-        <include file="$(find path_publisher)/launch/path_pub.launch"/>
-    
+		<node type="rviz" name="rviz" pkg="rviz" args="-d $(find path_follower_husky)/rviz/rviz_config.rviz"/>
 	</group>
     
     <!--################ Package #################-->
@@ -32,3 +31,4 @@
         args="$(arg vel) $(arg ang) $(arg lingain) $(arg anggain)"/>
 
 </launch>
+
