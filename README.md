@@ -10,6 +10,7 @@ contains messages used
 
 ## path_follower_husky
 proportional controller that tracks given reference points
+### path file
+rostopic pub -r 2 /mur/planner/path mur_common/path_msg -f pathh.yaml
 
-## path_publsher
-reads a csv file and publishes each line as path points for Husky to track
+
