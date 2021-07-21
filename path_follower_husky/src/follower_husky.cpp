@@ -7,6 +7,7 @@ HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w, doub
     path_x.reserve(500);
     path_y.reserve(500);
     centre_points.reserve(500);
+    index = 0;
     if (ros::ok())
     {
         launchSubscribers();
@@ -31,7 +32,9 @@ void HuskyFollower::spin()
     waitForMsgs();
     steeringControl();
     publishCtrl();
+    pushPathViz();
     clearVars();
+    std::cout<<"points size: "<<centre_points.size()<<" index: "<<index<<std::endl;
     
 }
 void HuskyFollower::clearVars()
@@ -41,6 +44,7 @@ void HuskyFollower::clearVars()
     odom_msg_received = false;
     path_msg_received = false;
     new_centre_points = false;
+    newGP = false;
 
 }
 
@@ -54,6 +58,7 @@ int HuskyFollower::launchSubscribers()
 int HuskyFollower::launchPublishers()
 {
     pub_control = nh.advertise<geometry_msgs::Twist>(CMDVEL_TOPIC, 1);
+    pub_path_viz = nh.advertise<nav_msgs::Path>(PATH_VIZ_TOPIC, 1);
 }
 
 //same as updatePose
@@ -89,15 +94,45 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
     path_msg_received = true;
     if (centre_points.size() != path_x.size())
     {
+        PathPoint offset(path_x.front(),path_y.front());
         new_centre_points = true;
+        float tempX, tempY;
         for(int i=centre_points.size();i<path_x.size();i++)
         {
-            centre_points.emplace_back(path_x[i],path_y[i]);
+            tempX = path_x[i] - offset.x;
+            tempY = path_y[i] - offset.y;
+            centre_points.emplace_back(tempX,tempY);
+            std::cout<<"new points received: "<< centre_points[i].x<<", "<<centre_points[i].y<<std::endl;
         }
         
     }
     
+    
 }
+void HuskyFollower::pushPathViz()
+{
+    nav_msgs::Path path_viz_msg;
+    path_viz_msg.header.frame_id = "map";
+
+    std::vector<geometry_msgs::PoseStamped> poses;
+    poses.reserve(path_x.size());
+
+    for (int p = 0; p < path_x.size(); p++)
+    {
+        geometry_msgs::PoseStamped item; 
+        item.header.frame_id = "map";
+        item.header.seq = p;
+        item.pose.position.x = path_x[p];
+        item.pose.position.y = path_y[p];
+        item.pose.position.z = 0.0;
+
+        poses.emplace_back(item);
+    }
+
+    path_viz_msg.poses = poses;
+    pub_path_viz.publish(path_viz_msg);
+}
+
 void HuskyFollower::publishCtrl()
 {
     // Initialize msg
@@ -111,15 +146,28 @@ void HuskyFollower::publishCtrl()
 
 void HuskyFollower::steeringControl()
 {
-	PathPoint goalPt = getGoalPoint(); //get nearest point from path points
-    std::cout<<"goal point: "<<goalPt.x<<", "<<goalPt.y<<std::endl;
-    
-    float dist = getDistFromCar(goalPt);
-    lin_velocity = (KP * dist) > MAX_V ? MAX_V : KP_dist * dist;
-    std::cout << "linvel set as:" << lin_velocity << std::endl;
+	if (centre_points.size() == 0)
+        return;
+    PathPoint goalPoint = getGoalPoint(); //get nearest point from path points
+    std::cout<<"goal point: "<<goalPoint.x<<", "<<goalPoint.y<<std::endl;
+    std::cout<<"car pose: "<<car_x<<", "<<car_y<<std::endl;
 
-    float angle = getAngleFromCar(centre_points[1]);
-    ang_velocity =  (KP * angle) >= this->max_w ? this->max_w : KP_angle * angle; 
+    float dist = getDistFromCar(goalPoint);//pos error
+    if (dist > ERRL)
+        // lin_velocity = (KP * dist) > MAX_V ? MAX_V : KP * dist;
+        lin_velocity = 0.5;
+    else
+        lin_velocity = 0.002;
+        
+    std::cout << "linear vel set as:" << lin_velocity << std::endl;
+
+    
+    float angle = getAngleFromCar(goalPoint); //angle error
+    
+    if(abs(angle) > ERRA)
+        ang_velocity =  getSign(angle)*max_w;
+    else
+        ang_velocity = 0.0;
     std::cout << "angular velocity set as:" << ang_velocity << std::endl;
  
 }
@@ -128,16 +176,16 @@ void HuskyFollower::steeringControl()
 float HuskyFollower::getDistFromCar(PathPoint pnt)
 {
     //updateRearPos();
-    float dX = rearX - pnt.x;
-	float dY = rearY - pnt.y;
+    float dX = car_x - pnt.x;
+	float dY = car_y - pnt.y;
     return sqrt(dX * dX + dY * dY);
 }
 
 float HuskyFollower::getAngleFromCar(PathPoint pnt)
 {
-    float dX = rearX - pnt.x;
-	float dY = rearY - pnt.y;
-    return atan2(dY,dX) - car_yaw;
+    float dX = car_x - pnt.x;
+	float dY = car_y - pnt.y;
+    return atan2(pnt.y,pnt.x) - car_yaw;
 }
 
 
@@ -146,50 +194,62 @@ float HuskyFollower::getAngleFromCar(PathPoint pnt)
 //search for the pathpoint that is closest to the car
 PathPoint HuskyFollower::getGoalPoint() 
 {
-    if (index == -1 || oldIndex == -1) //first time
-    {
+    // if (index == -1 || oldIndex == -1) //first time
+    // {
         float dist = 99999.1; //random large number
-        float temp;
-        int skip = 0;
-        for (int i = centre_points.size()-1; i>0; i--)
-        {
-            temp = getDistFromCar(centre_points[i]);
-            if(dist > temp)
-            {
-               dist = temp;
-               skip = 0;
-               index = i;
-            }
-        }
-        oldIndex = index;
-        std::cout<<"index: "<<index<<std::endl;
+    //     float temp;
+    //     int skip = 0;
+    //     for (int i = centre_points.size()-1; i>0; i--)
+    //     {
+    //         temp = getDistFromCar(centre_points[i]);
+    //         if(dist > temp)
+    //         {
+    //            dist = temp;
+    //            skip = 0;
+    //            index = i;
+    //         }
+    //     }
+    //     oldIndex = index;
+    //     std::cout<<"index: "<<index<<std::endl;
+    // }
+    // else
+    // {
+    //     index = oldIndex;
+    //     float dis1 = getDistFromCar(centre_points[index]);
+    //     for(int j = index; j < centre_points.size(); j++)
+    //     {
+    //         if (dis1 > getDistFromCar(centre_points[j]))
+    //         {
+    //             index = j;
+    //             break;
+    //         }
+    //     }
+    //     oldIndex = index;
+    //     std::cout<<"index: "<<index<<std::endl;
+    // }
+    // return PathPoint(centre_points[index]);
+    float temp = getDistFromCar(centre_points[index]);
+    std::cout<< "hello world!!!!!!!   current dis: "<<temp<<std::endl;
+    if (temp < ERRL)
+    {
+        index++;
+        newGP = true;
+        
+        return centre_points[index];
     }
     else
-    {
-        index = oldIndex;
-        float dis1 = getDistFromCar(centre_points[index]);
-        for(int j = index; j < centre_points.size(); j++)
-        {
-            if (dis1 > getDistFromCar(centre_points[j]))
-            {
-                index = j;
-                break;
-            }
-        }
-        oldIndex = index;
-        std::cout<<"index: "<<index<<std::endl;
-    }
-    return PathPoint(centre_points[index]);
-    
+        return centre_points[index];
+
+
 
 }
 
 float HuskyFollower::getSign(float &num)
 {
     if (num < 0)
-        return -1;
+        return -1.0;
     else 
-        return 1;
+        return 1.0;
 }
 
 
@@ -206,7 +266,7 @@ int main(int argc, char **argv)
     
     //Initialize Husky Object
     
-    HuskyFollower follower(n,max_v, max_w, lingain, anggain);
+    HuskyFollower follower(n,0.7, 0.09, 0.5, 1.0); //change this
         //ros::Rate freq(20);
 	
 	    while (ros::ok())
