@@ -21,9 +21,10 @@ HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w, doub
 }
 void HuskyFollower::waitForMsgs()
 {
-    while (!odom_msg_received ||!path_msg_received && ros::ok()) 
+    if (!path_msg_received || !odom_msg_received && ros::ok()) 
     {
 	ros::spinOnce();
+    // ros
     }
 }
 
@@ -35,6 +36,7 @@ void HuskyFollower::spin()
     pushPathViz();
     clearVars();
     std::cout<<"points size: "<<centre_points.size()<<" index: "<<index<<std::endl;
+    ros::Rate(HZ).sleep();
     
 }
 void HuskyFollower::clearVars()
@@ -112,18 +114,18 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
 void HuskyFollower::pushPathViz()
 {
     nav_msgs::Path path_viz_msg;
-    path_viz_msg.header.frame_id = "map";
+    path_viz_msg.header.frame_id = "odom";
 
     std::vector<geometry_msgs::PoseStamped> poses;
-    poses.reserve(path_x.size());
+    poses.reserve(centre_points.size());
 
-    for (int p = 0; p < path_x.size(); p++)
+    for (int p = 0; p < centre_points.size(); p++)
     {
         geometry_msgs::PoseStamped item; 
         item.header.frame_id = "map";
         item.header.seq = p;
-        item.pose.position.x = path_x[p];
-        item.pose.position.y = path_y[p];
+        item.pose.position.x = centre_points[p].x;
+        item.pose.position.y = centre_points[p].y;
         item.pose.position.z = 0.0;
 
         poses.emplace_back(item);
@@ -153,21 +155,18 @@ void HuskyFollower::steeringControl()
     std::cout<<"car pose: "<<car_x<<", "<<car_y<<std::endl;
 
     float dist = getDistFromCar(goalPoint);//pos error
+    
     if (dist > ERRL)
         // lin_velocity = (KP * dist) > MAX_V ? MAX_V : KP * dist;
-        lin_velocity = 0.5;
+        lin_velocity = MAX_V; //we want constant V
     else
-        lin_velocity = 0.002;
+        lin_velocity = 0.002; //this could be 0 for full stop
         
     std::cout << "linear vel set as:" << lin_velocity << std::endl;
 
     
     float angle = getAngleFromCar(goalPoint); //angle error
-    
-    if(abs(angle) > ERRA)
-        ang_velocity =  getSign(angle)*max_w;
-    else
-        ang_velocity = 0.0;
+    ang_velocity = abs(KP_angle * angle) >= max_w ? getSign(angle)*max_w : KP_angle * angle*getSign(angle);
     std::cout << "angular velocity set as:" << ang_velocity << std::endl;
  
 }
@@ -183,9 +182,9 @@ float HuskyFollower::getDistFromCar(PathPoint pnt)
 
 float HuskyFollower::getAngleFromCar(PathPoint pnt)
 {
-    float dX = car_x - pnt.x;
-	float dY = car_y - pnt.y;
-    return atan2(pnt.y,pnt.x) - car_yaw;
+    float dX = pnt.x - car_x;
+	float dY = pnt.y - car_y;
+    return atan2(dY,dX) - car_yaw;
 }
 
 
@@ -266,7 +265,7 @@ int main(int argc, char **argv)
     
     //Initialize Husky Object
     
-    HuskyFollower follower(n,0.7, 0.09, 0.5, 1.0); //change this
+    HuskyFollower follower(n,0.7, 0.45, 0.5, 1.0);
         //ros::Rate freq(20);
 	
 	    while (ros::ok())
