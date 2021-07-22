@@ -33,10 +33,11 @@
 #define LFV  0.1  ///// look forward gain
 #define LFC  3.5    ///// look ahead distance
 #define V_CONST 1.0 //constant velocity 1m/s (for now)
-#define MAX_V 0.6 //1.0
+#define MAX_V 0.75 //1.0
 #define MAX_W 30
 #define ERRL 0.5
 #define ERRA 0.01
+#define HZ 20 //from Dennis path follower
 
 #define ODOM_TOPIC "/odometry/filtered" //"/mur/slam/Odom"
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
