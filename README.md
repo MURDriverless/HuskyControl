@@ -11,8 +11,9 @@ for Husky testing using terminal
 contains messages used
 
 ## path_follower_husky
-proportional controller that tracks given reference points
+Pure pursuit controller that tracks given reference points
+
 ### path file
-`rostopic pub -r 2 /mur/planner/path mur_common/path_msg -f pathh.yaml`
+`rostopic pub -r 3 /mur/planner/path mur_common/path_msg -f path53.yaml`
 
 
