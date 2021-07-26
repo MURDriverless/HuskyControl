@@ -10,9 +10,7 @@
     <arg name="rviz" default="true"/>
   
 	<arg name="vel" default="0.7"/>
-	<arg name="ang" default="30.0"/>
-    <arg name="lingain" default="0.5"/> 
-    <arg name="anggain" default="1.0"/>
+	<arg name="ang" default="0.55"/>
 
     <!--############## Husky Gazebo ##############-->
     <group if="$(arg gazebo)">
@@ -28,7 +26,7 @@
     <!--################ Package #################-->
     <node pkg="path_follower_husky" type="path_follower_husky" name="followerNode" output="screen" 
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " 
-        args="$(arg vel) $(arg ang) $(arg lingain) $(arg anggain)"/>
+        args="$(arg vel) $(arg ang)"/>
 
 </launch>
 
