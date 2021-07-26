@@ -1,7 +1,9 @@
-# Husky  Control
+# Husky  Path Follower
+
+![huskygif](https://user-images.githubusercontent.com/75785603/126956952-6ba4b37d-5abd-46a7-b392-22ab6943f270.gif)
+
 
 These are the packages related to Husky control
-
 ## Husky Terminal Control
 for Husky testing using terminal
 
