@@ -1,15 +1,15 @@
 #include "follower_husky.h"
 #include <iostream>
 
-HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w, double KP_dist, double KP_angle)
-                :nh(n), max_v(max_v),max_w(max_w), KP_dist(KP_dist), KP_angle(KP_angle)
+HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w)
+                :nh(n), max_v(max_v),max_w(max_w)
 {
     //specify minimum size of vectors
     path_x.reserve(500);
     path_y.reserve(500);
     centre_points.reserve(500);
     centre_splined.reserve(2000);
-    centre_endOfLap.reserve(10);
+    centre_endOfLap.reserve(100);
     xp.reserve(200);
     yp.reserve(200);
     T.reserve(200);
@@ -41,8 +41,9 @@ void HuskyFollower::spin()
     pushPathViz();
     clearVars();
 
-    if (DEBUG) std::cout<<"Splined points size: "<<centre_splined.size()<<" Current index: "<<index<<"\n"<<std::endl;
-    
+    if (!endOfLap)
+        if (DEBUG) std::cout<<"Splined points size: "<<centre_splined.size()<<" Current index: "<<index<<std::endl;
+
     ros::Rate(HZ).sleep();
 }
 
@@ -72,6 +73,8 @@ int HuskyFollower::launchPublishers()
     pub_path_viz = nh.advertise<nav_msgs::Path>(PATH_VIZ_TOPIC, 1);
 }
 
+// get odometry messages
+// convert Quat to Euler yaw 
 void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
 {
     car_x = msg.pose.pose.position.x;
@@ -94,6 +97,7 @@ void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
     odom_msg_received = true;
 }
 
+// get path messages
 void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
 {
     for (int i=0; i < msg.x.size(); i++)
@@ -103,7 +107,7 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
     }
     path_msg_received = true;
 
-    if (centre_points.size() != path_x.size())
+    if ((centre_points.size() != path_x.size()) && !endOfLap)
     {
         new_centre_points = true;
         PathPoint offset(path_x.front(),path_y.front()); //use this if path doesnt start at (0,0)
@@ -113,15 +117,16 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
             tempX = path_x[i] - offset.x;
             tempY = path_y[i] - offset.y;
             centre_points.emplace_back(tempX,tempY);
-            if (DEBUG) std::cout<<"[pathCallback] new points received: "<< centre_points[i].x<<", "<<centre_points[i].y<<std::endl;
+            if (DEBUG) std::cout<<"\n[pathCallback] new points received: "<< centre_points[i].x<<", "<<centre_points[i].y<<std::endl;
         }
         generateSplines();
-    }
-    
+    }   
     
 }
 
-void HuskyFollower::pushPathViz() //for rviz
+// publish path to RVIZ
+// For Husky testing only, this is supposed to be in path planner
+void HuskyFollower::pushPathViz()
 {
     nav_msgs::Path path_viz_msg;
     path_viz_msg.header.frame_id = "odom";
@@ -145,6 +150,7 @@ void HuskyFollower::pushPathViz() //for rviz
     pub_path_viz.publish(path_viz_msg);
 }
 
+//publish actuation control commands
 void HuskyFollower::publishCtrl()
 {
     geometry_msgs::Twist vel_msg;
@@ -154,56 +160,63 @@ void HuskyFollower::publishCtrl()
     pub_control.publish(vel_msg);
 }
 
-
+// compute linear and angular velocity commands
+// can be confusing, dont mind end of lap codes at first
 void HuskyFollower::steeringControl()
 {
-	if (centre_points.size() < 2) //go straight but slowly until more points are discovered
+	if (centre_points.size() <= 1) //no path points yet
     {
-        lin_velocity = 0.02;
+        lin_velocity = 0.0;
         ang_velocity = 0.0;
-        return;
+        return; //to ignore rest of function
     }
+    else if (centre_points.size() < 2) //go straight but slowly until more points are discovered
+    {
+        lin_velocity = 0.2;
+        ang_velocity = 0.0;
+        return; //to ignore rest of function
+    }
+
     float dist = getDistFromCar(currentGoalPoint);
 
     if (endOfLap)
     {
-        if (dist < 1)
+        if (dist < 0.5)
         {  
             lin_velocity = 0;
             ang_velocity = 0;
             ROS_INFO_STREAM("SLOW LAP FINISHED!");
             slowLapFinish = true;
-        }
-           
-
+        }     
     }
 
-    if (DEBUG) std::cout << "[steeringControl] Current car pose: ("<<car_x<<", "<<car_y<<")"<<std::endl;
+    if (DEBUG) std::cout << "\n[steeringControl] Current car pose: ("<<car_x<<", "<<car_y<<")"<<std::endl;
 
     if (Lf > dist)
         getGoalPoint();
-    else
-        if (DEBUG) std::cout<<"[steeringControl] ditance to current goal is: "<<dist<<std::endl;
 
     if (DEBUG) std::cout<<"[steeringControl] Current goal point is: ("<<currentGoalPoint.x<<", "<<currentGoalPoint.y<<")"<<std::endl;
-    
-    if (endOfPath) //slow down
+    if (DEBUG) std::cout<<"[steeringControl] ditance to current goal is: "<<dist<<std::endl;
+
+    if (endOfPath)
     {
-        lin_velocity = 0.25 * MAX_V;
+        if (DEBUG) std::cout<<"[steeringControl] end of path triggered!"<<std::endl;
+        lin_velocity = 0.75 * max_v;  //slow down
+        
         if (getDistFromCar(centre_splined.front())< Lf)//if 1 look ahead distance away from finish line
         {
+            ROS_INFO_STREAM("End of lap near");
             endOfLap = true;
+            generateSplines(); //trigger splining of centre_endOfPath
         }
     }
     else
-        lin_velocity = MAX_V; //constant velocity for now
+        lin_velocity = max_v; //constant velocity for now
         
     float angle = getAngleFromCar(currentGoalPoint);
-
+    ang_velocity = abs(KP * angle) >= max_w ? getSign(angle)*max_w : KP * angle;
+    
     if (DEBUG) std::cout <<"[steeringControl] angle error is "<<(angle*180/M_PI)<<" degrees" << std::endl;
-
-    ang_velocity = abs(KP_angle * angle) >= max_w ? getSign(angle)*max_w : KP_angle * angle;
- 
 }
 
 
@@ -218,7 +231,13 @@ float HuskyFollower::getAngleFromCar(PathPoint pnt)
 {
     float dX = pnt.x - car_x;
 	float dY = pnt.y - car_y;
-    return atan2(dY,dX) - car_yaw;
+    float ang  = atan2(dY,dX) - car_yaw;
+    if (ang > M_PI)
+        ang -= 2*M_PI;
+    else if (ang < -M_PI)
+        ang += 2*M_PI;
+    
+    return ang;
 }
 
 /**********
@@ -234,6 +253,9 @@ void HuskyFollower::generateSplines()
 {
     if (endOfLap)
     {
+        if (stopSpline)
+            return;
+        
         xp.push_back(car_x);
         yp.push_back(car_y);
         T.push_back(0);
@@ -250,7 +272,8 @@ void HuskyFollower::generateSplines()
         {
             centre_endOfLap.emplace_back(sx(i),sy(i));
         }
-        if (DEBUG) std::cout<<"[splines] end of lap splined: "<<std::endl;
+        if (DEBUG) std::cout<<"[splines] end of lap splined. splined path size: "<<centre_endOfLap.size()<<std::endl;
+        stopSpline = true;
     }
     
     //there must be at least 3 points for cubic spline to work
@@ -343,8 +366,17 @@ void HuskyFollower::getGoalPoint()
 {
     if (endOfLap) //if end of lap, change reference path to centre_endOfLap
     {
-        currentGoalPoint.updatePoint(centre_endOfLap[index_endOfLap]);//return value
-        index_endOfLap ++; 
+        currentGoalPoint.updatePoint(centre_endOfLap[index_endOfLap]); 
+        if ((Lf/2) > getDistFromCar(currentGoalPoint))
+        {
+            index_endOfLap ++;
+            currentGoalPoint.updatePoint(centre_endOfLap[index_endOfLap]); 
+
+            if (index_endOfLap >= centre_endOfLap.size()-1) //last point/ stopping point
+                index_endOfLap = centre_endOfLap.size()-2;
+        }
+
+        if (DEBUG) std::cout << "end of lap goal near" << std::endl;   
         return; //so it wont run the rest of this function
     }
 
@@ -406,7 +438,7 @@ void HuskyFollower::getGoalPoint()
     }
     if (DEBUG) std::cout<<"[getGoalPoint] new goal point set" <<std::endl;
     
-    if (index == centre_splined.size()-1) //if last index of path
+    if (index == centre_splined.size()-1) //if at last index of centre_splined path
     {
         endOfPath = true;
         currentGoalPoint.updatePoint(centre_splined.back());
@@ -437,12 +469,10 @@ int main(int argc, char **argv)
          // Get parameters from CLI
     float max_v = atof(argv[1]);
     float max_w = atof(argv[2]);
-    float lingain = atof(argv[3]);
-    float anggain = atof(argv[4]);
     
     //Initialize Husky Object
     
-    HuskyFollower follower(n,0.7, 0.55, 0.5, 1);
+    HuskyFollower follower(n,max_v, max_w);
         //ros::Rate freq(20);
 	
 	while (ros::ok())
