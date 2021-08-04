@@ -1,11 +1,14 @@
 # HUSKY PATH FOLLOWER
 
 Husky basic control for tracking path points
+![huskygif](https://user-images.githubusercontent.com/75785603/126956952-6ba4b37d-5abd-46a7-b392-22ab6943f270.gif)
+
 
 ## launch
 * contains launch file
 * launches both gazebo and rviz
 ```
+source devel/setup.bash
 roslaunch path_follower_husky follower_husky.launch
 ```
 
