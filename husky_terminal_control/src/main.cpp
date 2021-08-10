@@ -4,11 +4,13 @@
  * Here lies the instructions that will show up in terminal
  * Visit https://github.com/MURDriverless/HuskyControl for latest version and instructions on how to use
  * 
- * Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com 
+ * Version 1 by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com  https://github.com/MURDriverless/HuskyControl/tree/main/husky_terminal_control
+ * Current Version by Aldrei Recamadas
  */
 
 #include <stdlib.h>
 #include "terminalcontrol.h"
+#include <vector>
 
 /* Function List */
 bool instruction(TerminalControlHusky& husky, ros::Rate rate);
@@ -19,10 +21,10 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "husky_terminal_controller");
 
     // Get parameters from CLI
-    double max_v = atof(argv[1]);
-    double max_w = atof(argv[2]);
-    double lingain = atof(argv[3]);
-    double anggain = atof(argv[4]);
+    float max_v = atof(argv[1]);
+    float max_w = atof(argv[2]);
+    float lingain = atof(argv[3]);
+    float anggain = atof(argv[4]);
     
     //Initialize Husky Object
     TerminalControlHusky husky = TerminalControlHusky(max_v, max_w, lingain, anggain);
@@ -48,15 +50,16 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
 {
     // Initialize Variables
     int command;
-    double dist, speed, angle;
+    float dist, speed, angle;
     bool isForward;
-
+    
     // Ask for command
     std::cout << "Hello, this program has these listed functions. Please enter the command.\n";
+    std::cout << "0) Display Husky's current Position and Orientation\n";
     std::cout << "1) Specify movement and direction to Husky.\n";
     std::cout << "2) Specify location for Husky to travel to.\n";
     std::cout << "3) To test Husky movements by rotating in place for 10s.\n";
-    std::cout << "0) What is Husky's current Position and Orientation?\n";
+    std::cout << "4) Input Path Points for Husky to follow (x,y)\n";
     std::cout << "Any other number => Exit\n";
     while(!(std::cin >> command))
     {
@@ -67,21 +70,21 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
     
     if (command == 1)
     {
-        std::cout << "What is the distance? ";
+        std::cout << "Enter distance ";
         while(!(std::cin >> dist))
         {
             std::cout << "You have entered a wrong input, please specify distance with numbers only.\n";
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "What is the distance? ";
+            std::cout << "Enter distance  ";
         }
-        std::cout << "What is the speed to travel at? ";
+        std::cout << "Enter speed ";
         while(!(std::cin >> speed))
         {
             std::cout << "You have entered a wrong input, please specify speed with numbers only.\n";
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "What is the speed to travel at? ";
+            std::cout << "Enter Speed ";
         }
         std::cout << "Are you moving forwards? Answer 1 for true or 0 for false. ";
         while(!(std::cin >> isForward))
@@ -111,7 +114,7 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
         ros::spinOnce();
         
         // Initialize Variables
-        double goto_x, goto_y, error;
+        float goto_x, goto_y, error;
 
         std::cout << "Current pose of Husky is\n";
         std::cout << "x: " << husky.getX() << "\n";
@@ -150,7 +153,7 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
 
     else if(command == 3)
     {
-        double finaltime = ros::Time::now().toSec() + 10;
+        float finaltime = ros::Time::now().toSec() + 10;
 
         while (ros::Time::now().toSec() < finaltime)
         {
@@ -165,6 +168,72 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
 
         return 0;
     }
+    else if (command == 4)
+    {
+        std::vector<float> x,y;
+        x.reserve(20);
+        y.reserve(20);
+        ros::spinOnce();
+        std::cout << "Current pos of Husky is: (";
+        std::cout << husky.getX()<<", "<<husky.getY()<< ")"<<std::endl;
+
+        int numPoints = 1;
+        float temp;
+        char yn;
+        while(true)
+        {
+            std::cout << "\nEnter path point "<<numPoints<< ". x= ";
+            while(!(std::cin >> temp))
+            {
+                std::cout << "You have entered a wrong input, please specify x coordinate with numbers only.\n";
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout <<  "\nEnter point "<<numPoints<< ". x= ";
+            }
+            x.push_back(temp);
+            std::cout << "Enter point "<<numPoints<< ". y= ";
+            while(!(std::cin >> temp))
+            {
+                std::cout << "You have entered a wrong input, please specify y coordinate with numbers only.\n";
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout <<  "Enter path point "<<numPoints<< ". y= ";
+            }
+            y.push_back(temp);
+            std::cout << "Add more path points? y/n ";
+            while(!(std::cin >> yn))
+            {
+                std::cout << "You have entered a wrong input,'y' or 'n' only.\n";
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << "Add more path points? y/n ";
+            }
+            if (yn == 'y')
+            {
+                numPoints ++;
+                std::cout<<"path points entered: ";
+                for (int i=0;i<x.size();i++)
+                {
+                    std::cout<<"("<<x[i]<<", "<<y[i]<<") ";
+                }
+
+            }
+            else if(yn == 'n')
+            {
+                std::cout<<"path points entered: ";
+                for (int i=0;i<x.size();i++)
+                {
+                    std::cout<<"("<<x[i]<<", "<<y[i]<<") ";
+                }
+                break;
+            }
+
+        }
+        std::cout<<"path points size: "<<x.size()<<std::endl;
+        husky.pathFollower(x,y);
+        return 0;
+    }
+
 
     else if(command == 0)
     {
