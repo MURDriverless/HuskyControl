@@ -235,9 +235,9 @@ LinModelMatrix Model::getModelJacobian(const State &x, const Input &u) const
     // Column 5, dw
     A_c(si_index.th,si_index.w) = df3_dw; // th
     // Column 6, ds
-    A_c(si_index.s,si_index.vs) = 1.0; // s
-    // Column 7, dvs
     // all zero
+    // Column 7, dvs
+    A_c(si_index.s,si_index.vs) = 1.0; // s
 
     // Matrix B
     // Column 1, d dV

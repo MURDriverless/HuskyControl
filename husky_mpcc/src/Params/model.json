@@ -14,19 +14,18 @@
   "Cf"  : 1.38,
   "Df"  : 1500.0,
 
-  "m"   : 190.0,
+  "m"   : 50.0,
   "Iz"  : 110.0,
-  "lf"  : 0.775,
-  "lr"  : 0.775,
+  "lf"  : 0.272,
+  "lr"  : 0.272,
 
-  "car_l": 1.45,
-  "car_w": 0.69,
-  "husky_track": 0.555,
+  "car_l": 0.495,
+  "car_w": 0.335,
 
   "g"   : 9.81,
 
-  "R_in" : 0.7,
-  "R_out" : 0.7,
+  "R_in" : 0.35,
+  "R_out" : 0.35,
 
   "max_dist_proj": 3.0,
 
@@ -36,8 +35,6 @@
   "maxAlpha" : 0.15,
 
   "initial_velocity" : 0.3,
-  "s_trust_region" : 30.0,
+  "s_trust_region" : 30.0
 
-  "v_limit": 1.0,
-  "w_limit": 0.5
 }

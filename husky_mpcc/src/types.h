@@ -36,19 +36,6 @@ struct State{
         this->vs = vs;
     }
 
-    void limitChk(double vlim, double wlim)
-    {
-        if (abs(this->v) > vlim)
-        {
-            this->v > 0 ? v : -v;
-        }
-
-        if (abs(this->w) > wlim)
-        {
-            this->w > 0 ? w : -w;
-        }
-    }
-
     // Fix angle issues when near -180 and 180 deg
     // Also allows restarting of lap
     void unwrap(double track_length)

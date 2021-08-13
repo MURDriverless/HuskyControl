@@ -66,9 +66,6 @@ public:
     double initial_velocity;
     double s_trust_region;
 
-    double v_limit;
-    double w_limit;
-
     Param();
     Param(std::string file);
 

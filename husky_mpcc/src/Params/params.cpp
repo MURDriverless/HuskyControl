@@ -68,8 +68,6 @@ Param::Param(std::string file){
     initial_velocity = jsonModel["initial_velocity"];
     s_trust_region = jsonModel["s_trust_region"];
 
-    v_limit = jsonModel["v_limit"];
-    w_limit = jsonModel["w_limit"];
 }
 
 CostParam::CostParam(){
