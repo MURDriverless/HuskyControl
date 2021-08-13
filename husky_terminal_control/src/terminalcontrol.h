@@ -23,28 +23,28 @@
 #include <vector>
 #include "spline.h"
 
-
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
 #define ODOM_TOPIC "/odometry/filtered"
 
 #define MAXSPD 1.0 // Linear Velocity m/s
 #define MAXROT 30*M_PI/180 // Rotation Velociy rad/s
-#define HZ 20 // Husky can work at 50Hz max
-#define ACCEL_T 1 // Time (s) to reach max vel
+#define HZ 50 // Husky can work at 50Hz max
+#define FLW_HZ 50 
+#define ACCEL_T 1.5 // Time (s) to reach max vel
 
 // Husky Class
 class TerminalControlHusky{
     private:
     // Variables for Current Pose
-    float x;
-    float y;
-    float phi;
-    float linvel;
-    float angvel;
-    float max_v;
-    float max_w;
-    float KP_dist;
-    float KP_angle;
+    double x;
+    double y;
+    double phi;
+    double linvel;
+    double angvel;
+    double max_v;
+    double max_w;
+    double KP_dist;
+    double KP_angle;
     // ROS
     ros::NodeHandle n; // Create its specific node handler
     ros::Publisher velocityPublisher;
@@ -52,14 +52,17 @@ class TerminalControlHusky{
 
     public:
     // Constructor
-    TerminalControlHusky(float max_v, float max_w, float KP_dist, float KP_angle);
+    TerminalControlHusky(double max_v, double max_w, double KP_dist, double KP_angle);
 
     /* Husky Class Functions */
-    float getX();
-    float getY();
-    float getPhi(); // in radians
-    float getLinVel();
-    float getAngVel();
+    double getX();
+    double getY();
+    double getPhi(); // in radians
+    double getLinVel();
+    double getAngVel();
+
+    // Fix angle issues when facing left/west as it fluctuates between pi/-pi
+    void unwrapAngle(double& angle);
 
     // Update Husky's pose when receive from /odometry/filtered
     // topic: ODOM_TOPIC
@@ -69,14 +72,21 @@ class TerminalControlHusky{
     // Publish velocity msg
     // topic: CMDVEL_TOPIC
     // msg type: geometry_msgs::Twist
-    void publishVel(float linvel, float angvel);
+    void publishVel(double linvel, double angvel);
     
     // Move the robot for a certain distance at a certain speed, rotates before moving straight
-    void move(float dist, float speed, bool isForward, float angle);
+    void move(double dist, double speed, bool isForward, double angle);
     
     // Move the robot to a specified location, moving while rotating at the same time
-    void smoothmove(float dest_x, float dest_y, float error);
+    void smoothMove(double dest_x, double dest_y, double error);
 
+    // Test Husky Rotations
+    void testRotTime(); // time based
+    void testRot(); // sensor based
+
+    // Test Husky Forward/Backward Movements
+    void testMoveTime(); // time based
+    void testMove(); // sensor based
 
     // path follower
     float lin_velocity = 0;
@@ -98,8 +108,6 @@ class TerminalControlHusky{
     void getGoalPoint();
     void generateSplines();
     void clearVecs();
-
-
 };
 
 #endif //TERMINALCTRL_H

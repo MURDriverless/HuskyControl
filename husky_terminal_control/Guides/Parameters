@@ -1,0 +1,16 @@
+ROS Master guide: 001369_B Husky Usesr Manual.pdf pg14 pg19
+
+Husky Param
+max_accel = 3
+max_vel = 1
+max_w_accel = 6
+max_w = 2
+
+wheel_diameter = 0.3302
+wheel_mass = 2.637
+wheel_inertia, ixx="0.02467" ixy="0" ixz="0" iyy="0.04411" iyz="0" izz="0.02467"
+
+husky_mass = 46.034
+husky_inertia, ixx="0.6022" ixy="-0.02364" ixz="-0.1197" iyy="1.7386" iyz="-0.001544" izz="2.0296"
+dimension = 0.9874 (l) x 0.5709 (w)
+

@@ -14,7 +14,7 @@
 #include "terminalcontrol.h"
 
 // Husky Class Initiation
-TerminalControlHusky::TerminalControlHusky(float max_v, float max_w, float KP_dist, float KP_angle)
+TerminalControlHusky::TerminalControlHusky(double max_v, double max_w, double KP_dist, double KP_angle)
 {
     this->max_v = max_v < MAXSPD ? max_v : MAXSPD;
     this->max_w = max_w*M_PI/180 < MAXROT ? max_w*M_PI/180 : MAXROT;
@@ -33,40 +33,56 @@ TerminalControlHusky::TerminalControlHusky(float max_v, float max_w, float KP_di
 }
 
 /* Husky Class Get Functions */
-float TerminalControlHusky::getX()
+double TerminalControlHusky::getX()
 {
     return this->x;
 }
-float TerminalControlHusky::getY()
+double TerminalControlHusky::getY()
 {
     return this->y;
 }
-float TerminalControlHusky::getPhi() // in radians
+double TerminalControlHusky::getPhi() // in radians
 {
     return this->phi;
 }
-float TerminalControlHusky::getLinVel()
+double TerminalControlHusky::getLinVel()
 {
     return this->linvel;
 }
-float TerminalControlHusky::getAngVel()
+double TerminalControlHusky::getAngVel()
 {
     return this->angvel;
+}
+
+// Fix angle issues when facing left/west as it fluctuates between pi/-pi
+void TerminalControlHusky::unwrapAngle(double& angle)
+{
+    while(abs(angle) > M_PI)
+    {
+        if(angle > 0) // Should turn right instead
+        {
+            angle -= 2*M_PI;
+        }
+        else // Should turn left instead
+        {
+            angle += 2*M_PI;
+        }
+    }
 }
 
 // Update Husky object's pose when receive /Huskysim/Pose/ msgs
 // topic: ODOM_TOPIC
 // msg type: geometry_msgs::Pose.msg
-// args: [float] x y theta linear_velocity angular_velocity
+// args: [double] x y theta linear_velocity angular_velocity
 void TerminalControlHusky::updatePose(const nav_msgs::Odometry& msg)
 {
     this->x = msg.pose.pose.position.x;
     this->y = msg.pose.pose.position.y;
     
-    float q_x = msg.pose.pose.orientation.x;
-    float q_y = msg.pose.pose.orientation.y;
-    float q_z = msg.pose.pose.orientation.z;
-    float q_w = msg.pose.pose.orientation.w;
+    double q_x = msg.pose.pose.orientation.x;
+    double q_y = msg.pose.pose.orientation.y;
+    double q_z = msg.pose.pose.orientation.z;
+    double q_w = msg.pose.pose.orientation.w;
 
     // this->phi = Quart2EulerYaw(q_x, q_y, q_z, q_w); // rads
 
@@ -91,7 +107,7 @@ void TerminalControlHusky::updatePose(const nav_msgs::Odometry& msg)
 }
 
 // Publisher function to publish desired velocity
-void TerminalControlHusky::publishVel(float lin_vel, float ang_vel)
+void TerminalControlHusky::publishVel(double lin_vel, double ang_vel)
 {
     // Initialize msg
     geometry_msgs::Twist vel_msg;
@@ -105,7 +121,7 @@ void TerminalControlHusky::publishVel(float lin_vel, float ang_vel)
 // topic: CMDVEL_TOPIC
 // msg type: geometry_msgs/Twist
 // args: linear angular: [x,y,z] [x,y,z]
-void TerminalControlHusky::move(float dist, float speed, bool isForward, float angle)
+void TerminalControlHusky::move(double dist, double speed, bool isForward, double angle)
 {
     // Update position
     ros::spinOnce();
@@ -116,7 +132,7 @@ void TerminalControlHusky::move(float dist, float speed, bool isForward, float a
     geometry_msgs::Twist vel_msg;
 
     // Time based implementation
-    float initialtime, traveltime, finaltime;
+    double initialtime, traveltime, finaltime;
 
     // Check if to turn
     if(angle!= 0)
@@ -169,7 +185,7 @@ void TerminalControlHusky::move(float dist, float speed, bool isForward, float a
 }
     
 // Move the robot to a specified location, moving while rotating at the same time
-void TerminalControlHusky::smoothmove(float dest_x, float dest_y, float error)
+void TerminalControlHusky::smoothMove(double dest_x, double dest_y, double error)
 {
     ros::Rate rate(HZ);
 
@@ -177,13 +193,13 @@ void TerminalControlHusky::smoothmove(float dest_x, float dest_y, float error)
     geometry_msgs::Twist vel_msg;
 
     // Initialize Variables
-    float move_x, move_y, move_dist, dest_angle, move_angle;
-    float count = 0; // To have smooth acceleration at beginning
+    double move_x, move_y, move_dist, dest_angle, move_angle;
+    double count = 0; // To have smooth acceleration at beginning
 
     // Get initial
     move_x = dest_x - this->x;
     move_y = dest_y - this->y;
-    move_dist = sqrt((move_x*move_x) + (move_y*move_y));
+    move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
 
     // Have not reached
     while(move_dist > error)
@@ -198,7 +214,7 @@ void TerminalControlHusky::smoothmove(float dest_x, float dest_y, float error)
             vel_msg.linear.x *= count/(ACCEL_T*HZ);
         }
         
-        //std::cout << "linvel set as:" << vel_msg.linear.x << std::endl;
+        // std::cout << "linvel set as:" << vel_msg.linear.x << std::endl;
 
         // Compute angle to turn
         dest_angle = std::atan2(move_y,move_x);
@@ -206,22 +222,12 @@ void TerminalControlHusky::smoothmove(float dest_x, float dest_y, float error)
         
         // Have to fix for facing left, as it fluctuates between PI and -PI
         // This also lets it turn more efficiently (turns the shorter distance to reach dest_angle)
-        while(abs(move_angle) > M_PI)
-        {
-            if(move_angle > 0) // Should turn right instead
-            {
-                move_angle -= 2*M_PI;
-            }
-            else // Should turn left instead
-            {
-                move_angle += 2*M_PI;
-            }
-        }
+        unwrapAngle(move_angle);
 
         // Scale angle error as velocity to turn (Proportional Controller), limit speed of rotation as this->max_w
-        vel_msg.angular.z = (KP_angle * move_angle) >= this->max_w ? this->max_w : KP_angle * move_angle;
+        vel_msg.angular.z = abs(KP_angle * move_angle) >= this->max_w ? this->max_w : KP_angle * move_angle;
         
-        //std::cout << "angvel set as:" << vel_msg.angular.z << std::endl;
+        // std::cout << "angvel set as:" << vel_msg.angular.z << std::endl;
 
         velocityPublisher.publish(vel_msg);
 
@@ -232,32 +238,209 @@ void TerminalControlHusky::smoothmove(float dest_x, float dest_y, float error)
         // Get new distance
         move_x = dest_x - this->x;
         move_y = dest_y - this->y;
-        move_dist = sqrt((move_x*move_x) + (move_y*move_y));
+        move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
 
         rate.sleep();
     }
 
     // Should reach destination by now
-    vel_msg.linear.x = 0;
-    vel_msg.angular.z = 0;
-    velocityPublisher.publish(vel_msg);
+    publishVel(0,0);
 
     ROS_INFO("x: %lf, y:%lf \n", this->x, this->y);    
 }
 
-// // Converts from Quartenion to Euler Yaw
-// // From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-// float TerminalControlHusky::Quart2EulerYaw(float q_x, float q_y, float q_z, float q_w)
-// {
-//     float siny_cosp = 2.0 * (q_w * q_z + q_x * q_y);
-//     float cosy_cosp = 1.0 - (2.0 * (q_y * q_y + q_z * q_z));
-//     return std::atan2(siny_cosp, cosy_cosp);
-// }
+// To test rotation using time based approach at constant velocity
+void TerminalControlHusky::testRotTime()
+{
+    ros::Rate rate(HZ);
+    ros::spinOnce();
+    ROS_INFO("Current phi: %lf\n", this->phi);
+
+    std::cout << "Rotating in place for 12s at 30deg/s. Should do full rotation." << std::endl;
+    double finaltime = ros::Time::now().toSec() + 12;
+
+    while (ros::Time::now().toSec() < finaltime)
+    {
+        // Update Position
+        ros::spinOnce();
+
+        publishVel(0, M_PI/18.0*3.0); // 30 deg per s
+        rate.sleep(); // 50Hz max
+    }
+    publishVel(0, 0);
+    ros::spinOnce();
+    ROS_INFO("After rotation phi: %lf\n", this->phi);
+}
+
+// To test rotation using sensor values and doing feedback control on that
+void TerminalControlHusky::testRot()
+{
+    ros::Rate rate(HZ);
+
+    // Update position and save current angle
+    ros::spinOnce();
+    ROS_INFO("Current phi: %lf\n", this->phi);
+    double cur_angle = this->phi;
+    double move_angle = 0.0; // initialize move_angle
+
+    // Initialize msg
+    geometry_msgs::Twist vel_msg;
+
+    while(abs(move_angle) <= M_PI/18.0*17.0) // While error lesser than 170deg
+    {
+        // Set some angular velocity
+        vel_msg.angular.z = 3.0/18.0*M_PI; // 20deg/s
+        velocityPublisher.publish(vel_msg);
+
+        ros::spinOnce();
+        move_angle = this->phi - cur_angle;
+        unwrapAngle(move_angle);
+
+        rate.sleep();
+    }
+
+    while(abs(move_angle) >= M_PI/180.0*3.0) // While error greater than 5deg
+    {
+        // Scale angle error as velocity to turn (Proportional Controller), limit speed of rotation as this->max_w
+        vel_msg.angular.z = abs(KP_angle * move_angle) >= this->max_w ? this->max_w : KP_angle * abs(move_angle);
+        velocityPublisher.publish(vel_msg);
+
+        // Update error term
+        ros::spinOnce();
+        move_angle = this->phi - cur_angle;
+        unwrapAngle(move_angle);
+
+        rate.sleep();
+    }
+
+    // Stop rotation
+    publishVel(0,0);
+    ros::spinOnce();
+    ROS_INFO("After rotation phi: %lf\n", this->phi);
+}
+
+// To test forward/backwards movement using time based approach at constant velocity
+void TerminalControlHusky::testMoveTime()
+{
+    ros::Rate rate(HZ);
+    
+    // Update state and set output
+    ros::spinOnce();
+    ROS_INFO("Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
+    double dest_x = this->x + std::cos(this->phi);
+    double dest_y = this->y + std::sin(this->phi);
+    double move_x = dest_x - this->x;
+    double move_y = dest_y - this->y;
+    double move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+    ROS_INFO("Moving forward by 1m, then backwards by 1m. Expect to reach (%lf, %lf), which is %lf away", dest_x, dest_y, move_dist);
+
+    double finaltime = ros::Time::now().toSec() + 4;
+
+    while (ros::Time::now().toSec() < finaltime)
+    {
+        // Update Position
+        ros::spinOnce();
+
+        publishVel(0.25, 0); // 0.25m/s
+        rate.sleep(); // 50Hz max
+    }
+
+    publishVel(0, 0);
+    ros::spinOnce();
+    ROS_INFO("Moved forwards by 1m. Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
+
+    sleep(3); // sleep 3s
+
+    finaltime = ros::Time::now().toSec() + 4;
+
+    while (ros::Time::now().toSec() < finaltime)
+    {
+        // Update Position
+        ros::spinOnce();
+
+        publishVel(-0.25, 0); // 0.25m/s
+        rate.sleep(); // 50Hz max
+    }
+
+    publishVel(0, 0);
+    ros::spinOnce();
+    ROS_INFO("Moved backwards by 1m. Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
+}
+
+// To test forwards/backwards movement using sensor values and doing feedback control
+void TerminalControlHusky::testMove()
+{
+    ros::Rate rate(HZ);
+
+    // Update state and set output
+    ros::spinOnce();
+    double init_x = this->x;
+    double init_y = this->y;
+    ROS_INFO("Current x: %lf, y:%lf, phi:%lf\n", init_x, init_y, this->phi);
+    double dest_x = init_x + std::cos(this->phi);
+    double dest_y = init_y + std::sin(this->phi);
+    double move_x = dest_x - init_x;
+    double move_y = dest_y - init_y;
+    double move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+    ROS_INFO("Moving forward by 1m, then backwards by 1m. Expect to reach (%lf, %lf), which is %lfm away", dest_x, dest_y, move_dist);
+
+    // Initialize msg
+    geometry_msgs::Twist vel_msg;
+    std::cout << move_dist << std::endl;
+
+    while(move_dist >= 0.1) // While error greater than 0.1m
+    {
+        // Set linear velocity to be proportional to error, max of 0.25
+        vel_msg.linear.x = (KP_dist * move_dist) > 0.25 ? 0.25 : KP_dist * move_dist;
+        velocityPublisher.publish(vel_msg);
+
+        // Update error
+        ros::spinOnce();
+        move_x = dest_x - this->x;
+        move_y = dest_y - this->y;
+        move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+        std::cout << move_dist << std::endl;
+
+        rate.sleep();
+    }
+    
+    // Stop moving
+    publishVel(0, 0);
+    ros::spinOnce();
+    ROS_INFO("Moved forwards by 1m. Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
+
+    sleep(3); // sleep 3s
+
+    // Set initial position as new goal
+    move_x = this->x - init_x;
+    move_y = this->y - init_y;
+    move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+
+    while(move_dist >= 0.1) // While error greater than 0.1m
+    {
+        // Set linear velocity to be proportional to error, max of 0.25
+        vel_msg.linear.x = (KP_dist * move_dist) > 0.25 ? -0.25 : -(KP_dist * move_dist);
+        velocityPublisher.publish(vel_msg);
+
+        // Update error
+        ros::spinOnce();
+        move_x = init_x - this->x;
+        move_y = init_y - this->y;
+        move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+
+        rate.sleep();
+    }
+
+    // Stop moving
+    publishVel(0,0);
+    ros::spinOnce();
+    ROS_INFO("Moved backwards by 1m. Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
+}
 
 void TerminalControlHusky::pathFollower(std::vector<float> &ptX,std::vector<float> &ptY)
 {
     ros::spinOnce();
-    ros::Rate rate(HZ);
+    ros::Rate rate(FLW_HZ);
     geometry_msgs::Twist vel_msg;
     clearVecs();
     
@@ -331,7 +514,7 @@ float TerminalControlHusky::getDistFromCar(float &pntX,float &pntY)
 {
     float dX = getX() - pntX;
 	float dY = getY() - pntY;
-    return sqrt((dX*dX) + (dY*dY));
+    return std::sqrt((dX*dX) + (dY*dY));
 }
 
 float TerminalControlHusky::getAngleFromCar(float &pntX,float &pntY)

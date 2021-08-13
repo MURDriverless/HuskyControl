@@ -4,8 +4,7 @@
  * Here lies the instructions that will show up in terminal
  * Visit https://github.com/MURDriverless/HuskyControl for latest version and instructions on how to use
  * 
- * Version 1 by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com  https://github.com/MURDriverless/HuskyControl/tree/main/husky_terminal_control
- * Current Version by Aldrei Recamadas
+ * Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com 
  */
 
 #include <stdlib.h>
@@ -21,10 +20,10 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "husky_terminal_controller");
 
     // Get parameters from CLI
-    float max_v = atof(argv[1]);
-    float max_w = atof(argv[2]);
-    float lingain = atof(argv[3]);
-    float anggain = atof(argv[4]);
+    double max_v = atof(argv[1]);
+    double max_w = atof(argv[2]);
+    double lingain = atof(argv[3]);
+    double anggain = atof(argv[4]);
     
     //Initialize Husky Object
     TerminalControlHusky husky = TerminalControlHusky(max_v, max_w, lingain, anggain);
@@ -50,16 +49,17 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
 {
     // Initialize Variables
     int command;
-    float dist, speed, angle;
+    double dist, speed, angle;
     bool isForward;
-    
+
     // Ask for command
     std::cout << "Hello, this program has these listed functions. Please enter the command.\n";
-    std::cout << "0) Display Husky's current Position and Orientation\n";
     std::cout << "1) Specify movement and direction to Husky.\n";
     std::cout << "2) Specify location for Husky to travel to.\n";
-    std::cout << "3) To test Husky movements by rotating in place for 10s.\n";
-    std::cout << "4) Input Path Points for Husky to follow (x,y)\n";
+    std::cout << "3) To test Husky movements by rotating in place.\n";
+    std::cout << "4) To test Husky movements by moving forwards and backward.\n";
+    std::cout << "5) Input Path Points for Husky to follow (x,y)\n";
+    std::cout << "0) What is Husky's current Position and Orientation?\n";
     std::cout << "Any other number => Exit\n";
     while(!(std::cin >> command))
     {
@@ -70,21 +70,21 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
     
     if (command == 1)
     {
-        std::cout << "Enter distance ";
+        std::cout << "What is the distance? ";
         while(!(std::cin >> dist))
         {
             std::cout << "You have entered a wrong input, please specify distance with numbers only.\n";
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "Enter distance  ";
+            std::cout << "What is the distance? ";
         }
-        std::cout << "Enter speed ";
+        std::cout << "What is the speed (m/s) to travel at? ";
         while(!(std::cin >> speed))
         {
             std::cout << "You have entered a wrong input, please specify speed with numbers only.\n";
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::cout << "Enter Speed ";
+            std::cout << "What is the speed (m/s) to travel at? ";
         }
         std::cout << "Are you moving forwards? Answer 1 for true or 0 for false. ";
         while(!(std::cin >> isForward))
@@ -114,7 +114,7 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
         ros::spinOnce();
         
         // Initialize Variables
-        float goto_x, goto_y, error;
+        double goto_x, goto_y, error;
 
         std::cout << "Current pose of Husky is\n";
         std::cout << "x: " << husky.getX() << "\n";
@@ -146,29 +146,78 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
             std::cout << "error = ";
         }
 
-        husky.smoothmove(goto_x, goto_y, error);
+        husky.smoothMove(goto_x, goto_y, error);
 
         return 0;
     }
 
     else if(command == 3)
     {
-        float finaltime = ros::Time::now().toSec() + 10;
-
-        while (ros::Time::now().toSec() < finaltime)
+        int rotTimeTest;
+        std::cout << "Would you like to try rotating using time based approach? Answer 1 for true or 0 for false. ";
+        while(!(std::cin >> rotTimeTest))
         {
-            // Update Position
-            ros::spinOnce();
-
-            husky.publishVel(0, 2*M_PI/10); // 36 deg per s
-            rate.sleep(); // 50Hz max
+            std::cout << "You have entered a wrong input, please specify 1 or 0.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Would you like to try rotating using time based approach? Answer 1 for true or 0 for false. ";
+        }
+        if(rotTimeTest)
+        {
+            husky.testRotTime();
         }
 
-        husky.publishVel(0, 0);
+        int rotTest;    
+        std::cout << "Would you like to try rotating using feedback control? Answer 1 for true or 0 for false. ";
+        while(!(std::cin >> rotTest))
+        {
+            std::cout << "You have entered a wrong input, please specify 1 or 0.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Would you like to try rotating using feedback control? Answer 1 for true or 0 for false. ";
+        }
+        if(rotTest)
+        {
+            husky.testRot();
+        }
 
         return 0;
     }
-    else if (command == 4)
+
+    else if(command == 4)
+    {
+        int moveTimeTest;
+        std::cout << "Would you like to try moving using time based approach? Answer 1 for true or 0 for false. ";
+        while(!(std::cin >> moveTimeTest))
+        {
+            std::cout << "You have entered a wrong input, please specify 1 or 0.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Would you like to try moving using time based approach? Answer 1 for true or 0 for false. ";
+        }
+        if(moveTimeTest)
+        {
+            husky.testMoveTime();
+        }
+
+        int moveTest;    
+        std::cout << "Would you like to try moving using feedback control? Answer 1 for true or 0 for false. ";
+        while(!(std::cin >> moveTest))
+        {
+            std::cout << "You have entered a wrong input, please specify 1 or 0.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Would you like to try moving using feedback control? Answer 1 for true or 0 for false. ";
+        }
+        if(moveTest)
+        {
+            husky.testMove();
+        }
+
+        return 0;
+    }
+
+    else if (command == 5)
     {
         std::vector<float> x,y;
         x.reserve(20);
@@ -233,7 +282,6 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
         husky.pathFollower(x,y);
         return 0;
     }
-
 
     else if(command == 0)
     {
