@@ -58,7 +58,7 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
     std::cout << "2) Specify location for Husky to travel to.\n";
     std::cout << "3) To test Husky movements by rotating in place.\n";
     std::cout << "4) To test Husky movements by moving forwards and backward.\n";
-    std::cout << "5) Input Path Points for Husky to follow (x,y)\n";
+    std::cout << "5) Reinitialise Odometry\n";
     std::cout << "0) What is Husky's current Position and Orientation?\n";
     std::cout << "Any other number => Exit\n";
     while(!(std::cin >> command))
@@ -219,67 +219,15 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
 
     else if (command == 5)
     {
-        std::vector<float> x,y;
-        x.reserve(20);
-        y.reserve(20);
-        ros::spinOnce();
-        std::cout << "Current pos of Husky is: (";
-        std::cout << husky.getX()<<", "<<husky.getY()<< ")"<<std::endl;
+        // set odom to zero
+        husky.reinitialise = true;
+        husky.angleToZero();
 
-        int numPoints = 1;
-        float temp;
-        char yn;
-        while(true)
-        {
-            std::cout << "\nEnter path point "<<numPoints<< ". x= ";
-            while(!(std::cin >> temp))
-            {
-                std::cout << "You have entered a wrong input, please specify x coordinate with numbers only.\n";
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout <<  "\nEnter point "<<numPoints<< ". x= ";
-            }
-            x.push_back(temp);
-            std::cout << "Enter point "<<numPoints<< ". y= ";
-            while(!(std::cin >> temp))
-            {
-                std::cout << "You have entered a wrong input, please specify y coordinate with numbers only.\n";
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout <<  "Enter path point "<<numPoints<< ". y= ";
-            }
-            y.push_back(temp);
-            std::cout << "Add more path points? y/n ";
-            while(!(std::cin >> yn))
-            {
-                std::cout << "You have entered a wrong input,'y' or 'n' only.\n";
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout << "Add more path points? y/n ";
-            }
-            if (yn == 'y')
-            {
-                numPoints ++;
-                std::cout<<"path points entered: ";
-                for (int i=0;i<x.size();i++)
-                {
-                    std::cout<<"("<<x[i]<<", "<<y[i]<<") ";
-                }
+        std::cout << "Husky Odometry reinitialised\n";
+        std::cout << "x: " << husky.getX() << "\n";
+        std::cout << "y: " << husky.getY() << "\n";
+        std::cout << "yaw: " << husky.getPhi()*180/M_PI << "\n";
 
-            }
-            else if(yn == 'n')
-            {
-                std::cout<<"path points entered: ";
-                for (int i=0;i<x.size();i++)
-                {
-                    std::cout<<"("<<x[i]<<", "<<y[i]<<") ";
-                }
-                break;
-            }
-
-        }
-        std::cout<<"path points size: "<<x.size()<<std::endl;
-        husky.pathFollower(x,y);
         return 0;
     }
 

@@ -68,32 +68,32 @@ private:
     ros::Publisher pub_target;
     ros::Publisher pub_path_viz;
 
-    float max_v;
-    float max_w;
-    float KP_dist;
-    float KP_angle;
-    float Lf = LFC;                     // look ahead distance, can be adjusted, see code
+    double max_v;
+    double max_w;
+    double KP_dist;
+    double KP_angle;
+    double Lf = LFC;                     // look ahead distance, can be adjusted, see code
 
-    float car_x;                        // car pose x
-    float car_y;                        // car pose y
-    float car_lin_v;                    // car linear velocity
-    float car_ang_v;                    // car angulr velocity (for Husky only)
-    float car_yaw;                      // car yaw in Euler angle
+    double car_x;                        // car pose x
+    double car_y;                        // car pose y
+    double car_lin_v;                    // car linear velocity
+    double car_ang_v;                    // car angulr velocity (for Husky only)
+    double car_yaw;                      // car yaw in Euler angle
 
     bool odom_msg_received = false;
     bool new_centre_points = false;
 
-    std::vector<float> path_x;          
-    std::vector<float> path_y;
+    std::vector<double> path_x;          
+    std::vector<double> path_y;
     std::vector<PathPoint> centre_points;       // centre line points of race tack, from path planner
     std::vector<PathPoint> centre_splined;      // splined centre line points, see func generateSpline()
     std::vector<PathPoint> centre_endOfLap;     // path to follow when almost end of lap
     PathPoint currentGoalPoint = PathPoint(0,0);
 
     // temp vectors for splining
-    std::vector<float> xp;
-    std::vector<float> yp;
-    std::vector<float> T;
+    std::vector<double> xp;
+    std::vector<double> yp;
+    std::vector<double> T;
 
     bool path_msg_received = false;
     bool newGP = false;
@@ -105,8 +105,8 @@ private:
     int index_endOfLap = 1/STEPSIZE;             // index in centre_endOfLap for goal point
     
     // actuation commands, publish to actuator
-    float lin_velocity=0;
-    float ang_velocity=0; //for husky only
+    double lin_velocity=0;
+    double ang_velocity=0; //for husky only
     
     // *** functions *** //
     //standard ROS functions:
@@ -120,11 +120,11 @@ private:
 
     void steeringControl();             // see cpp file for description
     void generateSplines();             // see cpp file for description
-    float getDistFromCar(PathPoint);    // to compute distance of point to current car pose
-    float getAngleFromCar(PathPoint);   // to compute angle differene of a point to current car yaw 
+    double getDistFromCar(PathPoint);    // to compute distance of point to current car pose
+    double getAngleFromCar(PathPoint);   // to compute angle differene of a point to current car yaw 
     void clearVars();                   // clear temporary variables, vectors
     void getGoalPoint();                // see cpp file for description
-    float getSign(float&);              
+    double getSign(double&);              
 };
 
 

@@ -23,14 +23,7 @@ TerminalControlHusky::TerminalControlHusky(double max_v, double max_w, double KP
     this->velocityPublisher = n.advertise<geometry_msgs::Twist>(CMDVEL_TOPIC, 1);
     this->poseSubscriber = n.subscribe(ODOM_TOPIC, 1, &TerminalControlHusky::updatePose, this);
 
-    centre_pointsX.reserve(10);
-    centre_pointsY.reserve(10);
-    centre_splinedX.reserve(50);
-    centre_splinedY.reserve(50);
-    T.reserve(100);
-    currentGoalPointX = getX();
-    currentGoalPointY = getY();
-}
+
 
 /* Husky Class Get Functions */
 double TerminalControlHusky::getX()
@@ -76,8 +69,15 @@ void TerminalControlHusky::unwrapAngle(double& angle)
 // args: [double] x y theta linear_velocity angular_velocity
 void TerminalControlHusky::updatePose(const nav_msgs::Odometry& msg)
 {
-    this->x = msg.pose.pose.position.x;
-    this->y = msg.pose.pose.position.y;
+    if (reinitialise)
+    {
+       initX = msg.pose.pose.position.x;
+       initY = msg.pose.pose.position.y;
+       reinitialise = false;
+    }
+
+    this->x = msg.pose.pose.position.x - initX;
+    this->y = msg.pose.pose.position.y - initY;
     
     double q_x = msg.pose.pose.orientation.x;
     double q_y = msg.pose.pose.orientation.y;
@@ -94,7 +94,7 @@ void TerminalControlHusky::updatePose(const nav_msgs::Odometry& msg)
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
 
-    this->phi = yaw;
+    this->phi = yaw ;
 
     // std::cout << "converted phi:" << this->phi << std::endl;
     // std::cout << "tf phi: " << yaw << std::endl;
@@ -437,173 +437,27 @@ void TerminalControlHusky::testMove()
     ROS_INFO("Moved backwards by 1m. Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
 }
 
-void TerminalControlHusky::pathFollower(std::vector<float> &ptX,std::vector<float> &ptY)
+void TerminalControlHusky::angleToZero()
 {
     ros::spinOnce();
-    ros::Rate rate(FLW_HZ);
+    ros::Rate rate(HZ);
     geometry_msgs::Twist vel_msg;
-    clearVecs();
-    
-
-    centre_pointsX.push_back(getX());
-    centre_pointsY.push_back(getY());
-    for (int i=0; i<ptX.size(); i++)
-    {
-        centre_pointsX.push_back(ptX[i]);
-        centre_pointsY.push_back(ptY[i]);
-    }
-
-    float dist;
-    generateSplines();
-    while (true)
+    double angle = getPhi();
+    while (abs(angle) > 0.01)
     {
         ros::spinOnce();
-        dist = getDistFromCar(currentGoalPointX,currentGoalPointY);
-        if (Lfc > dist)
-            getGoalPoint();
-        std::cout<<"[Control] Current goal point is: ("<<currentGoalPointX<<", "<<currentGoalPointY<<")"<<std::endl;
-        std::cout<<"[Control] ditance to current goal is: "<<dist<<std::endl;
-
-
-        if (endOfPath)
-        {
-            std::cout<<"[steeringControl] end of path triggered!"<<std::endl;
-            lin_velocity = 0.75 * max_v;  //slow down
-            if (dist < 0.25)
-            {  
-                lin_velocity = 0;
-                ang_velocity = 0;
-                ROS_INFO_STREAM("GOAL REACHED!");
-
-                break;
-            }      
-        }
-        else
-            lin_velocity = max_v; //constant velocity for now
-        
-        float angle = getAngleFromCar(currentGoalPointX,currentGoalPointY);
-        ang_velocity = abs(angle) >= max_w ? getSign(angle)*max_w : angle;
-
-    
-        vel_msg.linear.x = lin_velocity;
-        vel_msg.angular.z = ang_velocity;
+        angle = getPhi();
+        vel_msg.angular.z = abs(angle) <= 0.01 ? -1*getSign(angle)*max_w : -1*angle;
+        vel_msg.linear.x = 0;
         velocityPublisher.publish(vel_msg);
         rate.sleep();
     }
 }
 
-void TerminalControlHusky::clearVecs()
-{
-    centre_pointsX.clear();
-    centre_pointsY.clear();
-    centre_splinedX.clear();
-    centre_splinedY.clear();
-    T.clear();
-    index = 1;
-    endOfPath = false;
-    
-}
-float TerminalControlHusky::getSign(float &num)
+double TerminalControlHusky::getSign(double &num)
 {
     if (num < 0)
         return -1.0;
     else 
         return 1.0;
-}
-float TerminalControlHusky::getDistFromCar(float &pntX,float &pntY) 
-{
-    float dX = getX() - pntX;
-	float dY = getY() - pntY;
-    return std::sqrt((dX*dX) + (dY*dY));
-}
-
-float TerminalControlHusky::getAngleFromCar(float &pntX,float &pntY)
-{
-    float dX = pntX - getX();
-	float dY = pntY - getY();
-    float ang  = atan2(dY,dX) - getPhi();
-    if (ang > M_PI)
-        ang -= 2*M_PI;
-    else if (ang < -M_PI)
-        ang += 2*M_PI;
-    
-    return ang;
-}
-void TerminalControlHusky::getGoalPoint()
-{
-    
-    float dist;
-
-    while (true)
-    {
-        if (index+1 >= centre_splinedX.size())
-            break;
-        dist = getDistFromCar(centre_splinedX[index],centre_splinedY[index]);
-        if (dist >= Lfc)
-            break;
-        else
-            index++;
-    }
-
-    if (index == centre_splinedX.size()-1) //if at last index of centre_splined path
-    {
-        endOfPath = true;
-        currentGoalPointX = centre_splinedX.back();
-        currentGoalPointY = centre_splinedY.back();
-        std::cout<<"[getGoalPoint] Husky near end of path" <<std::endl;
-    }
-    else
-    {
-        endOfPath = false;
-        currentGoalPointX = centre_splinedX[index]; //return value
-        currentGoalPointY = centre_splinedY[index];
-    }
-
-}
-
-void TerminalControlHusky::generateSplines()
-{
-    // temp vectors for splining
-    
-    float stepSize = 0.2;
-
-    //there must be at least 3 points for cubic spline to work
-    if (centre_pointsX.size() == 2) //if only 2, make a line
-    {
-        float tempX, tempY;
-
-        float slopeY = (centre_pointsY.back() - centre_pointsY.front()) / stepSize;
-        float slopeX = (centre_pointsX.back() - centre_pointsX.front()) / stepSize;
-        for (float i = 0; i<=centre_pointsX.size(); i+= stepSize)
-        {
-            tempY = slopeY * i;
-            tempX = slopeX * i;
-            centre_splinedX.push_back(tempX);
-            centre_splinedY.push_back(tempY);
-        }
-    }
-    else //for 2 < centre points size < 10 
-    {
-        for (int t = 0; t< centre_pointsX.size();t++)
-        {
-            T.push_back(t);
-        }
-
-        // Generate Spline Objects
-        // spline and x and y separately
-        // (see how tk::spline works)
-        tk::spline sx, sy;
-        sx.set_points(T, centre_pointsX);
-        sy.set_points(T, centre_pointsY);
-
-        centre_splinedX.clear(); //erase centre_splined and replace with new points
-        centre_splinedY.clear();
-        for (float i = 0; i < T.size(); i += stepSize)
-        {
-            centre_splinedX.push_back(sx(i));
-            centre_splinedY.push_back(sy(i));
-
-        }
-        std::cout<<"[Control] Splined path size: "<<centre_splinedX.size()<<std::endl;
-    }
 }
