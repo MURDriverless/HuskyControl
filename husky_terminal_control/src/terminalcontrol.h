@@ -88,26 +88,13 @@ class TerminalControlHusky{
     void testMoveTime(); // time based
     void testMove(); // sensor based
 
-    // path follower
-    float lin_velocity = 0;
-    float ang_velocity = 0;
-    std::vector<float> centre_pointsX;       // centre line points of race tack, from path planner
-    std::vector<float> centre_pointsY;
-    std::vector<float> centre_splinedX;
-    std::vector<float> centre_splinedY;
-    std::vector<float> T;
-    float currentGoalPointX;
-    float currentGoalPointY;
-    int index = 1;
-    bool endOfPath = false;
-    float Lfc = 2.5; //look ahead distance
-    void pathFollower(std::vector<float>&,std::vector<float>&);
-    float getDistFromCar(float&,float&);
-    float getAngleFromCar(float&,float&);
-    float getSign(float&);
-    void getGoalPoint();
-    void generateSplines();
-    void clearVecs();
+    // used to re initialise husky pose to (0,0) and 0degrees
+    void angleToZero();
+    double getSign(double &);
+    bool reinitialise = false;
+    float initX = 0;
+    float initY = 0;
+
 };
 
 #endif //TERMINALCTRL_H

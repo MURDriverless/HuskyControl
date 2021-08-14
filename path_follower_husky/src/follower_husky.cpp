@@ -41,8 +41,10 @@ void HuskyFollower::spin()
     pushPathViz();
     clearVars();
 
-    if (!endOfLap)
-        if (DEBUG) std::cout<<"Splined points size: "<<centre_splined.size()<<" Current index: "<<index<<std::endl;
+    if (centre_points.size()<2) reinitialise = true;
+
+    // if (!endOfLap)
+    //     if (DEBUG) std::cout<<"Splined points size: "<<centre_splined.size()<<" Current index: "<<index<<std::endl;
 
     ros::Rate(HZ).sleep();
 }
@@ -77,23 +79,33 @@ int HuskyFollower::launchPublishers()
 // convert Quat to Euler yaw 
 void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
 {
-    car_x = msg.pose.pose.position.x;
-    car_y = msg.pose.pose.position.y;
-    car_lin_v = msg.twist.twist.linear.x;
-    car_ang_v = msg.twist.twist.angular.z;
-
+    
+    if (reinitialise)
+    {
+       initX = msg.pose.pose.position.x;
+       initY = msg.pose.pose.position.y;
+       initYaw = car_yaw;
+       reinitialise = false;
+    }
+    this->car_x = msg.pose.pose.position.x - initX;
+    this->car_y = msg.pose.pose.position.y - initY;
+    
     double q_x = msg.pose.pose.orientation.x;
     double q_y = msg.pose.pose.orientation.y;
     double q_z = msg.pose.pose.orientation.z;
     double q_w = msg.pose.pose.orientation.w;
-    //convert quaternion to Euler
+
+    // this->phi = Quart2EulerYaw(q_x, q_y, q_z, q_w); // rads
+
+    this->car_lin_v = msg.twist.twist.linear.x;
+    this->car_ang_v = msg.twist.twist.angular.z;
+
     tf::Quaternion q(q_x, q_y, q_z, q_w);
     tf::Matrix3x3 m(q);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
 
-    car_yaw = yaw;
-
+    this->car_yaw = yaw - initYaw;
     odom_msg_received = true;
 }
 
@@ -111,11 +123,11 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
     {
         new_centre_points = true;
         PathPoint offset(path_x.front(),path_y.front()); //use this if path doesnt start at (0,0)
-        float tempX, tempY;
+        double tempX, tempY;
         for(int i=centre_points.size();i<path_x.size();i++)
         {
-            tempX = path_x[i] - offset.x;
-            tempY = path_y[i] - offset.y;
+            tempX = path_x[i] - offset.x + initX;
+            tempY = path_y[i] - offset.y + initY;
             centre_points.emplace_back(tempX,tempY);
             if (DEBUG) std::cout<<"\n[pathCallback] new points received: "<< centre_points[i].x<<", "<<centre_points[i].y<<std::endl;
         }
@@ -177,7 +189,7 @@ void HuskyFollower::steeringControl()
         return; //to ignore rest of function
     }
 
-    float dist = getDistFromCar(currentGoalPoint);
+    double dist = getDistFromCar(currentGoalPoint);
 
     if (endOfLap)
     {
@@ -213,25 +225,25 @@ void HuskyFollower::steeringControl()
     else
         lin_velocity = max_v; //constant velocity for now
         
-    float angle = getAngleFromCar(currentGoalPoint);
+    double angle = getAngleFromCar(currentGoalPoint);
     ang_velocity = abs(KP * angle) >= max_w ? getSign(angle)*max_w : KP * angle;
     
     if (DEBUG) std::cout <<"[steeringControl] angle error is "<<(angle*180/M_PI)<<" degrees" << std::endl;
 }
 
 
-float HuskyFollower::getDistFromCar(PathPoint pnt) 
+double HuskyFollower::getDistFromCar(PathPoint& pnt) 
 {
-    float dX = car_x - pnt.x;
-	float dY = car_y - pnt.y;
+    double dX = car_x - pnt.x;
+	double dY = car_y - pnt.y;
     return sqrt((dX*dX) + (dY*dY));
 }
 
-float HuskyFollower::getAngleFromCar(PathPoint pnt)
+double HuskyFollower::getAngleFromCar(PathPoint& pnt)
 {
-    float dX = pnt.x - car_x;
-	float dY = pnt.y - car_y;
-    float ang  = atan2(dY,dX) - car_yaw;
+    double dX = pnt.x - car_x;
+	double dY = pnt.y - car_y;
+    double ang  = atan2(dY,dX) - car_yaw;
     if (ang > M_PI)
         ang -= 2*M_PI;
     else if (ang < -M_PI)
@@ -268,7 +280,7 @@ void HuskyFollower::generateSplines()
         tk::spline sx, sy;
         sx.set_points(T, xp);
         sy.set_points(T, yp);
-        for (float i = 0; i < T.size(); i += STEPSIZE)
+        for (double i = 0; i < T.size(); i += STEPSIZE)
         {
             centre_endOfLap.emplace_back(sx(i),sy(i));
         }
@@ -279,16 +291,16 @@ void HuskyFollower::generateSplines()
     //there must be at least 3 points for cubic spline to work
     else if (centre_points.size() == 2) //if only 2, make a line
     {
-        float tempX, tempY;
+        double tempX, tempY;
         for (auto p:centre_points)
         {
             xp.push_back(p.x);
             yp.push_back(p.y);
         }
 
-        float slopeY = (yp.back() - yp.front()) / STEPSIZE;
-        float slopeX = (xp.back() - xp.front()) / STEPSIZE;
-        for (float i = 0; i<=xp.size(); i+= STEPSIZE)
+        double slopeY = (yp.back() - yp.front()) / STEPSIZE;
+        double slopeX = (xp.back() - xp.front()) / STEPSIZE;
+        for (double i = 0; i<=xp.size(); i+= STEPSIZE)
         {
             tempY = slopeY * i;
             tempX = slopeX * i;
@@ -319,7 +331,7 @@ void HuskyFollower::generateSplines()
         
         int temp = (centre_points.size() - SPLINE_N )/ STEPSIZE;
         centre_splined.assign(centre_splined.begin(),centre_splined.begin()+ temp);  //erase the last N points, then replace with new points
-        for (float i = 0; i < T.size(); i += STEPSIZE)
+        for (double i = 0; i < T.size(); i += STEPSIZE)
         {
             centre_splined.emplace_back(sx(i),sy(i));
         }
@@ -346,7 +358,7 @@ void HuskyFollower::generateSplines()
         sy.set_points(T, yp);
 
         centre_splined.clear(); //erase centre_splined and replace with new points
-        for (float i = 0; i < T.size(); i += STEPSIZE)
+        for (double i = 0; i < T.size(); i += STEPSIZE)
         {
             centre_splined.emplace_back(sx(i),sy(i));
         }
@@ -380,8 +392,8 @@ void HuskyFollower::getGoalPoint()
         return; //so it wont run the rest of this function
     }
 
-    float temp; //temporary var
-    float dist = 99999.1; //random large number
+    double temp; //temporary var
+    double dist = 99999.1; //random large number
 
     //step 1: look for the point nearest to the car
     if (index == -1 || oldIndex == -1) //first iteration
@@ -452,7 +464,7 @@ void HuskyFollower::getGoalPoint()
         
 }
 
-float HuskyFollower::getSign(float &num)
+double HuskyFollower::getSign(double &num)
 {
     if (num < 0)
         return -1.0;
@@ -467,8 +479,8 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
        
          // Get parameters from CLI
-    float max_v = atof(argv[1]);
-    float max_w = atof(argv[2]);
+    double max_v = atof(argv[1]);
+    double max_w = atof(argv[2]);
     
     //Initialize Husky Object
     
