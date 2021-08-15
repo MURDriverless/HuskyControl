@@ -23,7 +23,7 @@ TerminalControlHusky::TerminalControlHusky(double max_v, double max_w, double KP
     this->velocityPublisher = n.advertise<geometry_msgs::Twist>(CMDVEL_TOPIC, 1);
     this->poseSubscriber = n.subscribe(ODOM_TOPIC, 1, &TerminalControlHusky::updatePose, this);
 
-
+}
 
 /* Husky Class Get Functions */
 double TerminalControlHusky::getX()
@@ -69,20 +69,27 @@ void TerminalControlHusky::unwrapAngle(double& angle)
 // args: [double] x y theta linear_velocity angular_velocity
 void TerminalControlHusky::updatePose(const nav_msgs::Odometry& msg)
 {
-    if (reinitialise)
-    {
-       initX = msg.pose.pose.position.x;
-       initY = msg.pose.pose.position.y;
-       reinitialise = false;
-    }
-
-    this->x = msg.pose.pose.position.x - initX;
-    this->y = msg.pose.pose.position.y - initY;
-    
     double q_x = msg.pose.pose.orientation.x;
     double q_y = msg.pose.pose.orientation.y;
     double q_z = msg.pose.pose.orientation.z;
     double q_w = msg.pose.pose.orientation.w;
+
+    if (reinitialise)
+    {
+        initX = msg.pose.pose.position.x;
+        initY = msg.pose.pose.position.y;
+
+        tf::Quaternion q(q_x, q_y, q_z, q_w);
+        tf::Matrix3x3 m(q);
+        double roll, pitch, yaw;
+        m.getRPY(roll, pitch, yaw);
+
+        initPhi = yaw;
+        reinitialise = false;
+    }
+
+    this->x = msg.pose.pose.position.x - initX;
+    this->y = msg.pose.pose.position.y - initY;
 
     // this->phi = Quart2EulerYaw(q_x, q_y, q_z, q_w); // rads
 
@@ -94,7 +101,7 @@ void TerminalControlHusky::updatePose(const nav_msgs::Odometry& msg)
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
 
-    this->phi = yaw ;
+    this->phi = yaw - initPhi;
 
     // std::cout << "converted phi:" << this->phi << std::endl;
     // std::cout << "tf phi: " << yaw << std::endl;
@@ -399,7 +406,6 @@ void TerminalControlHusky::testMove()
         move_x = dest_x - this->x;
         move_y = dest_y - this->y;
         move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
-        std::cout << move_dist << std::endl;
 
         rate.sleep();
     }
@@ -435,6 +441,156 @@ void TerminalControlHusky::testMove()
     publishVel(0,0);
     ros::spinOnce();
     ROS_INFO("Moved backwards by 1m. Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
+}
+
+// To test square shape movement using time based approach at constant velocity
+void TerminalControlHusky::testSqMoveTime(double side)
+{
+    ros::Rate rate(HZ);
+
+    double dest_x, dest_y, dest_phi, move_x, move_y, move_dist, spd, finaltime, error;
+
+    // loop 4 times
+    for(int i = 0; i < 4; i++)
+    {
+        // Update state and set forward goal
+        ros::spinOnce();
+        ROS_INFO("Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
+
+        dest_x = this->x + std::cos(this->phi);
+        dest_y = this->y + std::sin(this->phi);
+        move_x = dest_x - this->x;
+        move_y = dest_y - this->y;
+        move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+        ROS_INFO("Moving forward by %lfm. Expect to reach (%lf, %lf), which is %lf away", side, dest_x, dest_y, move_dist);
+
+        if (side <= 1)
+        {
+            spd = 0.25;
+        }
+        else if (side <= 3)
+        {
+            spd = 0.5;
+        }
+        else
+        {
+            spd = 1.0;
+        }
+
+        finaltime = ros::Time::now().toSec() + side/spd;
+
+        while (ros::Time::now().toSec() < finaltime)
+        {
+            // Update Position
+            ros::spinOnce();
+
+            publishVel(spd, 0);
+            rate.sleep(); // 50Hz max
+        }
+
+        publishVel(0, 0); // Stop
+        ros::spinOnce();
+        error = std::sqrt((this->x - dest_x)*(this->x - dest_x) + (this->y - dest_y)*(this->y - dest_y));
+        ROS_INFO("Current x: %lf, y:%lf, phi:%lf, which is %lf away from goal\n", this->x, this->y, this->phi, error);
+
+        // Set rotation goal
+        ros::spinOnce();
+        dest_phi = this->phi + M_PI/2;
+        unwrapAngle(dest_phi);
+
+        finaltime = ros::Time::now().toSec() + 3;
+
+        while (ros::Time::now().toSec() < finaltime)
+        {
+            // Update Position
+            ros::spinOnce();
+
+            publishVel(0, M_PI/18.0*3.0); // 30 deg per s
+            rate.sleep(); // 50Hz max
+        }
+        publishVel(0, 0);
+        ros::spinOnce();
+        error = this->phi - dest_phi;
+        ROS_INFO("After rotation phi: %lf, which is %lf away from goal\n", this->phi, error);
+    }
+}
+
+// To test forwards/backwards movement using sensor values and doing feedback control
+void TerminalControlHusky::testSqMove(double side)
+{
+    ros::Rate rate(HZ);
+
+    double init_x, init_y, init_phi, dest_x, dest_y, dest_phi, move_x, move_y, move_dist, move_angle, error;
+    double vel, ang;
+
+    // loop 4 times
+    for(int i = 0; i < 4; i++)
+    {
+        // Update state and set forward goal
+        ros::spinOnce();
+        double init_x = this->x;
+        double init_y = this->y;
+        ROS_INFO("Current x: %lf, y:%lf, phi:%lf\n", init_x, init_y, this->phi);
+
+        dest_x = init_x + side*std::cos(this->phi);
+        dest_y = init_y + side*std::sin(this->phi);
+        move_x = dest_x - init_x;
+        move_y = dest_y - init_y;
+        move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+        ROS_INFO("Moving forward by %lfm. Expect to reach (%lf, %lf), which is %lf away", side, dest_x, dest_y, move_dist);
+        int count = 0;
+        while(move_dist >= 0.1) // While error greater than 0.1m
+        {
+            // Set forward velocity with respect to distance, limit to max_v
+            vel = (KP_dist * move_dist) > this->max_v ? this->max_v : KP_dist * move_dist;
+
+            // Slowly increase velocity if desired max velocity too early on
+            count++;
+            if (count < ACCEL_T*HZ && (vel == this->max_v))
+            {
+                vel *= count/(ACCEL_T*HZ);
+            }
+            publishVel(vel, 0);
+
+            // Update error
+            ros::spinOnce();
+            move_x = dest_x - this->x;
+            move_y = dest_y - this->y;
+            move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+
+            rate.sleep();
+        }
+        publishVel(0, 0); // Stop
+
+        ros::spinOnce();
+        error = std::sqrt((this->x - dest_x)*(this->x - dest_x) + (this->y - dest_y)*(this->y - dest_y));
+        ROS_INFO("Current x: %lf, y:%lf, phi:%lf, which is %lf away from goal\n", this->x, this->y, this->phi, error);
+
+        // Set rotation goal
+        ros::spinOnce();
+        init_phi = this->phi;
+        dest_phi = init_phi + M_PI/2;
+        unwrapAngle(dest_phi);
+        move_angle = dest_phi - init_phi;
+
+        while (abs(move_angle) >= 0.1) // While error greater than 0.1m
+        {
+            // Scale angle error as velocity to turn (Proportional Controller), limit speed of rotation as this->max_w
+            ang = abs(KP_angle * move_angle) >= this->max_w ? this->max_w : KP_angle * abs(move_angle);
+            publishVel(0, ang);
+
+            // Update error term
+            ros::spinOnce();
+            move_angle = this->phi - dest_phi;
+            unwrapAngle(move_angle);
+
+            rate.sleep();
+        }
+        publishVel(0, 0);
+        ros::spinOnce();
+        error = this->phi - dest_phi;
+        ROS_INFO("After rotation phi: %lf, which is %lf away from goal\n", this->phi, error);
+    }
 }
 
 void TerminalControlHusky::angleToZero()

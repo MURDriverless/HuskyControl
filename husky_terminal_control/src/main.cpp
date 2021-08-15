@@ -4,7 +4,8 @@
  * Here lies the instructions that will show up in terminal
  * Visit https://github.com/MURDriverless/HuskyControl for latest version and instructions on how to use
  * 
- * Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com 
+ * Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com
+ * Repo @ https://github.com/MURDriverless/HuskyControl
  */
 
 #include <stdlib.h>
@@ -58,7 +59,8 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
     std::cout << "2) Specify location for Husky to travel to.\n";
     std::cout << "3) To test Husky movements by rotating in place.\n";
     std::cout << "4) To test Husky movements by moving forwards and backward.\n";
-    std::cout << "5) Reinitialise Odometry\n";
+    std::cout << "5) To test Husky by moving in a square.\n";
+    std::cout << "6) Reinitialise Odometry\n";
     std::cout << "0) What is Husky's current Position and Orientation?\n";
     std::cout << "Any other number => Exit\n";
     while(!(std::cin >> command))
@@ -153,6 +155,7 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
 
     else if(command == 3)
     {
+        std::cout << "Rotating in place test initiated." << std::endl;
         int rotTimeTest;
         std::cout << "Would you like to try rotating using time based approach? Answer 1 for true or 0 for false. ";
         while(!(std::cin >> rotTimeTest))
@@ -186,6 +189,7 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
 
     else if(command == 4)
     {
+        std::cout << "Forward and backwards movement test initiated." << std::endl;
         int moveTimeTest;
         std::cout << "Would you like to try moving using time based approach? Answer 1 for true or 0 for false. ";
         while(!(std::cin >> moveTimeTest))
@@ -217,7 +221,51 @@ bool instruction(TerminalControlHusky& husky, ros::Rate rate)
         return 0;
     }
 
-    else if (command == 5)
+    else if(command == 5)
+    {
+        std::cout << "Square movement test initiated." << std::endl;
+        double side;
+        std::cout << "Please specify length of side of square. ";
+        while(!(std::cin >> side))
+        {
+            std::cout << "You have entered a wrong input, please specify with numbers only.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Please specify length of side of square. ";
+        }
+
+        int sqMoveTimeTest;
+        std::cout << "Would you like to try moving using time based approach? Answer 1 for true or 0 for false. ";
+        while(!(std::cin >> sqMoveTimeTest))
+        {
+            std::cout << "You have entered a wrong input, please specify 1 or 0.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Would you like to try moving using time based approach? Answer 1 for true or 0 for false. ";
+        }
+        if(sqMoveTimeTest)
+        {
+            husky.testSqMoveTime(side);
+        }
+
+        int sqMoveTest;    
+        std::cout << "Would you like to try moving using feedback control? Answer 1 for true or 0 for false. ";
+        while(!(std::cin >> sqMoveTest))
+        {
+            std::cout << "You have entered a wrong input, please specify 1 or 0.\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Would you like to try moving using feedback control? Answer 1 for true or 0 for false. ";
+        }
+        if(sqMoveTest)
+        {
+            husky.testSqMove(side);
+        }
+
+        return 0;
+    }
+
+    else if (command == 6)
     {
         // set odom to zero
         husky.reinitialise = true;
