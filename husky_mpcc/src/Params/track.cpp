@@ -16,13 +16,17 @@
 
 #include "track.h"
 
-// Increase track size by factor k
+// Increase shift start of track to 0, then track size by factor k
 void MultiplyVector(std::vector<double> &v, double k)
 {
-    transform(v.begin(), v.end(), v.begin(), [k](double &c){ return c*k; });
+    transform(v.begin(), v.end(), v.begin(), [v,k](double &c){ return (c-v.front())*k; });
+    // transform(v.begin(), v.end(), v.begin(), [v,k](double &c){ return c*k; });
 }
 
 namespace mpcc{
+
+Track::Track() {} ;
+
 Track::Track(std::string file) 
 {
     /////////////////////////////////////////////////////

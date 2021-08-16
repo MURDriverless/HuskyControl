@@ -145,23 +145,6 @@ void FastLapControlNode::publishVel(double lin_vel, double ang_vel)
     velocityPublisher.publish(vel_msg);
 }
 
-// Publisher function to publish actuation output
-void FastLapControlNode::publishActuation(double accel_D, double steering_angle)
-{
-    // Initialize msg
-    mur_common::actuation_msg act_msg;
-
-    // Set msg
-    act_msg.acceleration_threshold = accel_D;
-    act_msg.steering = steering_angle;
-    
-    // ROS INFO
-    ROS_INFO("PUBLISHING COMMANDS, ACCEL: %lf, STEER: %lf\n", accel_D, steering_angle);
-    
-    // Publish msg
-    actuationPublisher.publish(act_msg);
-}
-
 // Get Functions
 bool FastLapControlNode::getFastLapReady(){
     return this->fastlapready;
@@ -286,7 +269,7 @@ mpcc::State FastLapControlNode::initialize()
         // -31.30, // alex full (x)
         // -14.60, // alex full (y)
         // -0.70, // alex full (yaw)
-        this->v,
+        this->v,// < 0.05 ? 0.05 : this->v,
         this->w,
         0.0,  // s
         this->v // vs
@@ -305,7 +288,7 @@ mpcc::State FastLapControlNode::update(const mpcc::State& x0, const mpcc::Input&
     x_new.X = this->x;
     x_new.Y = this->y;
     x_new.th = this->th;
-    x_new.v = this->v;
+    x_new.v = this->v; //< 0.05 ? 0.05 : this->v;
     x_new.w = this->w;
     // Copy over from RK4
     x_new.s = x0.s;

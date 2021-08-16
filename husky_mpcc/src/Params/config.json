@@ -3,8 +3,9 @@
   "n_sqp": 2,
   "n_reset": 2,
   "sqp_mixing" : 0.9,
-  "n_sim": 350,
+  "n_sim": 1000,
   "Ts": 0.15,
+  "Hz": 6,
   "v0": 1.0,
   
   "model_path": "/home/khengyu/catkin_ws/src/husky_mpcc/src/Params/model.json",

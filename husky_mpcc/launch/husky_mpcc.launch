@@ -5,18 +5,20 @@
     -->
 
     <arg name="node_start_delay" default="5.0"/>
-    <arg name="gazebo" default="true"/>
-    <arg name="rviz" default="true"/>
+    <arg name="gazebo" default="1"/>
+    <arg name="map" default="husky_eufs"/>
+    <arg name="rviz" default="1"/>
   
-	<arg name="vel" default="1.0"/>
-	<arg name="ang" default="30.0"/>
-    <arg name="lingain" default="0.5"/> 
-    <arg name="anggain" default="1.0"/>
+    <arg name="comm" default="1"/> <!-- Want to communicate with SLAM and stuff -->
+    <arg name="skip" default="1"/> <!-- Skip to Fast lap directly -->
 
     <!--############## Husky Gazebo ##############-->
+    <!-- located in opt/ros/<distro>/share/husky_gazebo -->
+    <!-- look at launch and world files and folders -->
     <group if="$(arg gazebo)">
 		<!-- <include file="$(find husky_gazebo)/launch/husky_playpen.launch"/> -->
-        <include file="$(find husky_gazebo)/launch/husky_empty_world.launch"/>
+	        <!-- <include file="$(find husky_gazebo)/launch/husky_empty_world.launch"/> -->
+        <include file="$(find husky_gazebo)/launch/$(arg map).launch"/>
 	</group>
     
     <!--################# RVIZ ###################-->
@@ -27,6 +29,6 @@
     <!--################ Package #################-->
     <node pkg="husky_mpcc" type="husky_mpcc" name="husky_mpcc" output="screen" 
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " 
-        args="$(arg vel) $(arg ang) $(arg lingain) $(arg anggain)"/>
+        args="$(arg comm) $(arg skip)"/>
 
 </launch>

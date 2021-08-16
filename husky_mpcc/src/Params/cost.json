@@ -1,12 +1,12 @@
 
 {
-  "qC" : 0.01,
+  "qC" : 0.001,
   "qL" : 1000,
-  "qVs" : 20,
+  "qVs" : 5,
 
   "qMu": 1,
 
-  "qW" : 5,
+  "qW" : 10,
 
   "qBeta" : 5E0,
   "betaKin": 1,
@@ -22,11 +22,11 @@
   "qCNmult": 10,
   "qWNmult": 30,
 
-  "sc_quad_track": 1000000.0,
+  "sc_quad_track": 100.0,
   "sc_quad_tire": 100.0,
   "sc_quad_alpha": 100.0, 
 
-  "sc_lin_track": 1000.0,
+  "sc_lin_track": 10.0,
   "sc_lin_tire": 10.0,
   "sc_lin_alpha": 10.0
 }
