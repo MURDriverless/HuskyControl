@@ -23,9 +23,9 @@ A simple unicycle model is used in this version,
 
 ## To test EUFS/Small track in Gazebo Simulation (Using Husky Sim)
 1. Install [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
-2. Please set <distro> as your ROS distro version, e.g. melodic, before running `sudo cp ToMove/husky_eufs.launch /opt/ros/<distro>/share/husky_gazebo/launch`.
+2. Please set `<distro>` as your ROS distro version, e.g. melodic, before running `sudo cp ToMove/husky_eufs.launch /opt/ros/<distro>/share/husky_gazebo/launch`.
 3. Husky Sim can probably directly load models and world from mursim package, not sure how, so we'll do a bit of moving stuff around.
-4. Add the following lines to /opt/ros/<distro>/share/husky_gazebo/package.xml if they are not there
+4. Add the following lines to `/opt/ros/<distro>/share/husky_gazebo/package.xml` if they are not there
 ```
   <exec_depend>gazebo_ros</exec_depend>
 
@@ -33,8 +33,8 @@ A simple unicycle model is used in this version,
     <gazebo_ros gazebo_model_path="${prefix}/models"/>
   </export>
 ```
-5. From [mursim package](https://github.com/MURDriverless/mursim), move models folder from mursim_description to /opt/ros/<distro>/share/husky_gazebo/
-6. From [mursim package](https://github.com/MURDriverless/mursim), move eufs_track.world from mursim_gazebo/worlds/ to /opt/ros/<distro>/share/husky_gazebo/worlds
+5. From [mursim package](https://github.com/MURDriverless/mursim), move `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
+6. From [mursim package](https://github.com/MURDriverless/mursim), move `eufs_track.world` from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
 7. Clone this package, then build it with `catkin build`
 8. `source devel/setup.bash` then `roslaunch husky_mpcc husky_mpcc.launch` and it'll launch the Husky running in eufs_track.
 
