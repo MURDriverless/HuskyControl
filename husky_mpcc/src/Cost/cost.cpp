@@ -99,48 +99,6 @@ ErrorInfo Cost::getErrorInfo(const ArcLengthSpline &track,const State &x) const
     return {contouring_error,d_contouring_error};
 }
 
-// CostMatrix Cost::getBetaCost(const State &x) const
-// {
-// //    CostMatrix beta_cost;
-//     const double vx = x.vx;
-//     const double vy = x.vy;
-//     // jacobian of beta
-//     Eigen::Matrix<double,1,NX> d_beta = Eigen::Matrix<double,1,NX>::Zero();
-//     d_beta(si_index.vx) = -vy/(vx*vx + vy*vy);
-//     d_beta(si_index.vy) =  vx/(vx*vx + vy*vy);
-//     // zero order term of beta approximation
-//     const double beta_zero = std::atan(vy/vx) - d_beta*stateToVector(x);
-//     // Q_beta = (qBeta*beta)^2 ~ x^T (qBeta*dBeta^T*dBeta) x + (qBeta*2*BetaZero*qBeta)^ x + const
-//     const Q_MPC Q_beta = 2.0*cost_param_.q_beta*d_beta.transpose()*d_beta;
-//     const q_MPC q_beta = cost_param_.q_beta*2.0*beta_zero*d_beta.transpose();
-
-//     return {Q_beta,R_MPC::Zero(),S_MPC::Zero(),q_beta,r_MPC::Zero(),Z_MPC::Zero(),z_MPC::Zero()};
-// }
-
-// CostMatrix Cost::getBetaKinCost(const State &x) const
-// {
-//     const double rel_center = param_.lr/(param_.lf + param_.lr);
-//     //    CostMatrix beta_cost;
-//     const double vx = x.vx;
-//     const double vy = x.vy;
-    
-//     const double delta = x.delta;
-//     // jacobian of beta
-//     Eigen::Matrix<double,1,NX> d_beta = Eigen::Matrix<double,1,NX>::Zero();
-//     d_beta(si_index.vx) =  vy/(vx*vx + vy*vy);
-//     d_beta(si_index.vy) = -vx/(vx*vx + vy*vy);
-    
-//     d_beta(si_index.delta) = (rel_center*(1.0/std::cos(delta))*(1.0/std::cos(delta)))/
-//                              (rel_center*rel_center*std::tan(delta)*std::tan(delta) + 1.0);
-//     // zero order term of beta approximation
-//     const double beta_zero = std::atan(std::tan(delta)*rel_center) - std::atan(vy/vx) - d_beta*stateToVector(x);
-//     // Q_beta = (qBeta*beta)^2 ~ x^T (qBeta*dBeta^T*dBeta) x + (qBeta*2*BetaZero*qBeta)^ x + const
-//     const Q_MPC Q_beta = 2.0*cost_param_.q_beta*d_beta.transpose()*d_beta;
-//     const q_MPC q_beta = cost_param_.q_beta*2.0*beta_zero*d_beta.transpose();
-            
-//     return {Q_beta,R_MPC::Zero(),S_MPC::Zero(),q_beta,r_MPC::Zero(),Z_MPC::Zero(),z_MPC::Zero()};
-// }
-
 CostMatrix Cost::getContouringCost(const ArcLengthSpline &track, const State &x,const int k) const
 {
     // compute state cost, formed by contouring error cost + cost on "real" inputs
@@ -247,20 +205,15 @@ CostMatrix Cost::getCost(const ArcLengthSpline &track, const State &x, const Inp
     const CostMatrix contouring_cost = getContouringCost(track,x,k);
     const CostMatrix heading_cost = getHeadingCost(track,x,k);
     const CostMatrix input_cost = getInputCost();
-    // CostMatrix beta_cost;
-    // if(cost_param_.beta_kin_cost == 1)
-    //     beta_cost = getBetaKinCost(x);
-    // else
-    //     beta_cost = getBetaCost(x);
     const CostMatrix soft_con_cost = getSoftConstraintCost();
 
-    Q_MPC Q_not_sym = contouring_cost.Q + heading_cost.Q + input_cost.Q; //+ beta_cost.Q;
+    Q_MPC Q_not_sym = contouring_cost.Q + heading_cost.Q + input_cost.Q;
     Q_MPC Q_reg = 1e-9*Q_MPC::Identity();
 
     Q_MPC Q_full = 0.5*(Q_not_sym.transpose()+Q_not_sym);
-    R_MPC R_full = contouring_cost.R + heading_cost.R + input_cost.R;// + beta_cost.R;
-    q_MPC q_full = contouring_cost.q + heading_cost.q + input_cost.q;// + beta_cost.q;
-    r_MPC r_full = contouring_cost.r + heading_cost.r + input_cost.r;// + beta_cost.r;
+    R_MPC R_full = contouring_cost.R + heading_cost.R + input_cost.R;
+    q_MPC q_full = contouring_cost.q + heading_cost.q + input_cost.q;
+    r_MPC r_full = contouring_cost.r + heading_cost.r + input_cost.r;
 
     //TODO do this properly directly in the differnet functions computing the cost
     const Q_MPC Q = Q_full;

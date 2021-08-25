@@ -1,7 +1,8 @@
 <launch>
+<!-- Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com -->
     <!--################# Args ###################-->
     <!-- 
-        For use on CLI e.g. "roslaunch mursim_gazebo perception:=false"
+        For use on CLI e.g. "roslaunch husky_mpcc husky_mpcc.launch rviz:=0"
     -->
 
     <arg name="node_start_delay" default="5.0"/>

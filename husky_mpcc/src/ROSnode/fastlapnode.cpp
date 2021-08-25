@@ -30,9 +30,8 @@ FastLapControlNode::FastLapControlNode()
 
     this->slamSubscriber = nh.subscribe(ODOM_TOPIC, 1, &FastLapControlNode::slamCallback, this);
     this->mapSubscriber = nh.subscribe(MAP_TOPIC, 1, &FastLapControlNode::mapCallback, this);
-    this->finalActuationSubscriber = nh.subscribe(ACTUATION_TOPIC, 1, &FastLapControlNode::finalActuationCallback, this);
+    this->finalActuationSubscriber = nh.subscribe(CMDVEL_TOPIC, 1, &FastLapControlNode::finalActuationCallback, this);
     this->velocityPublisher = nh.advertise<geometry_msgs::Twist>(CMDVEL_TOPIC, 1);
-    this->actuationPublisher = nh.advertise<mur_common::actuation_msg>(ACTUATION_TOPIC, 1);
     this->transitionPublisher = nh.advertise<mur_common::transition_msg>(TRANSITION_TOPIC, 1);
 }
 
@@ -91,45 +90,32 @@ void FastLapControlNode::mapCallback(const mur_common::map_msg& msg)
     }
 }
 
-// // Obtain centerline from planner
-// // topic: /mur/planner/path
-// // msg: mur_common/path_msg 
-// void FastLapControlNode::pathCallback(const mur_common::path_msg::ConstPtr& msg)
-// {
-//     if (this->mapready && !this->pathready) // Only update once when mapping is done and path not ready
-//     {
-//         this->x_centre = msg.x;
-//         this->y_centre = msg.y;
-//         this->pathready = true;
-//     }
-// }
-
 // Obtain final actuation output from slow lap, so it can transition smoothly
-// Also publishes fastlapready, so slow lap follower can stop publishing actuation_msg
+// Also publishes fastlapready, so slow lap follower can stop publishing actuation commands
 // topic: /mur/control/actuation
-// msg: mur_common/actuation_msg
-void FastLapControlNode::finalActuationCallback(const mur_common::actuation_msg& msg)
+// msg: geometry_msgs/Twist
+void FastLapControlNode::finalActuationCallback(const geometry_msgs::Twist& msg)
 {
-    // // Only update once when mapping is done
-    // if (this->mapready && !this->fastlapready) 
-    // {
-    //     ROS_INFO_STREAM("MAP READY and Receiving final actuation.");
-    //     this->accel_D = msg.acceleration_threshold;
-    //     this->steering_angle = msg.steering;
-    //     this->fastlapready = true;
+    // Only update once when mapping is done
+    if (this->mapready && !this->fastlapready) 
+    {
+        ROS_INFO_STREAM("MAP READY and Receiving final actuation.");
+        this->v = msg.linear.x;
+        this->w = msg.angular.z;
+        this->fastlapready = true;
 
-    //     if (this->fastlapready)
-    //     {
-    //         ROS_INFO_STREAM("Obtained FINAL ACTUATION!, now FASTLAPREADY.");
-    //         ROS_INFO_STREAM("Final actuation is " << accel_D);
-    //         ROS_INFO_STREAM("Final steering is " << steering_angle);
-    //     }
-    // }
+        if (this->fastlapready)
+        {
+            ROS_INFO_STREAM("Obtained FINAL ACTUATION!, now FASTLAPREADY.");
+            ROS_INFO_STREAM("Final linear velocity command is " << v);
+            ROS_INFO_STREAM("Final angular velocity command is " << w);
+        }
+    }
 
-    // // Initialize msg and publish
-    // mur_common::transition_msg transition_msg;
-    // transition_msg.fastlapready = this->fastlapready;
-    // transitionPublisher.publish(transition_msg);
+    // Initialize msg and publish
+    mur_common::transition_msg transition_msg;
+    transition_msg.fastlapready = this->fastlapready;
+    transitionPublisher.publish(transition_msg);
 }
 
 // Publisher function to publish desired velocity
@@ -157,46 +143,6 @@ mpcc::Track FastLapControlNode::generateTrack()
     mpcc::Track track = mpcc::Track(this->x_outer, this->y_outer, 
                                     this->x_inner, this->y_inner, 
                                     this->x_centre, this->y_centre);
-
-    // int o_count = 0;
-    // int i_count = 0;
-    // int c_count = 0;
-    // ROS_INFO_STREAM("Track generated with these parameters");
-    // ROS_INFO_STREAM("X_Outer: ");
-    // for (auto i = this->x_outer.begin(); i != this->x_outer.end(); ++i)
-    // {
-    //     std::cout << *i << ' ';
-    //     o_count++;
-    // }
-    // ROS_INFO_STREAM("Y_Outer: ");
-    // for (auto i = this->y_outer.begin(); i != this->y_outer.end(); ++i)
-    // {
-    //     std::cout << *i << ' ';
-    // }
-    // ROS_INFO_STREAM("X_Inner: ");
-    // for (auto i = this->x_inner.begin(); i != this->x_inner.end(); ++i)
-    // {
-    //     std::cout << *i << ' ';
-    //     i_count++;
-    // }
-    // ROS_INFO_STREAM("Y_Inner: ");
-    // for (auto i = this->y_inner.begin(); i != this->y_inner.end(); ++i)
-    // {
-    //     std::cout << *i << ' ';
-    // }
-    // ROS_INFO_STREAM("X_Centre: ");
-    // for (auto i = this->x_centre.begin(); i != this->x_centre.end(); ++i)
-    // {
-    //     std::cout << *i << ' ';
-    //     c_count++;
-    // }
-    // ROS_INFO_STREAM("Y_Centre: ");
-    // for (auto i = this->y_centre.begin(); i != this->y_centre.end(); ++i)
-    // {
-    //     std::cout << *i << ' ';
-    //     c_count++;
-    // }
-    // ROS_INFO_STREAM("\nOuter num: " << o_count << ". Inner num: " << i_count << ". Centre num: " << c_count); //25 30 118
 
     // // Write current track into csv
     // std::ofstream trackfile;
@@ -251,29 +197,10 @@ mpcc::State FastLapControlNode::initialize()
         this->x,
         this->y,
         this->th,
-        // -13.00, // eufs starting at orange cone (x)
-        // 10.30, // eufs starting at orange cone (y)
-        // 0.00, // eufs starting at orange cone (yaw)
-        // -15.30, // eufs starting when map connected (x)
-        // 5.60, // eufs starting when map connected (y)
-        // 1.57, // eufs starting when map connected (yaw) 
-        // 0.0, // dennis track at top (x)
-        // 0.0, // dennis track at top (y)
-        // 0.0, // dennis track at top (yaw)
-        // 25.0, // dennis track difficult (x)
-        // -58.0, // dennis track difficult (y)
-        // -0.7, // dennis strack difficult (yaw)
-        // -10.30, // alex RC (x)
-        // 13.60, // alex RC (y)
-        // -0.70, // alex RC (yaw)
-        // -31.30, // alex full (x)
-        // -14.60, // alex full (y)
-        // -0.70, // alex full (yaw)
-        this->v,// < 0.05 ? 0.05 : this->v,
+        this->v,
         this->w,
         0.0,  // s
         this->v // vs
-        // 1.0, // slow lap end speed
     };
 
     return x;
@@ -288,16 +215,11 @@ mpcc::State FastLapControlNode::update(const mpcc::State& x0, const mpcc::Input&
     x_new.X = this->x;
     x_new.Y = this->y;
     x_new.th = this->th;
-    x_new.v = this->v; //< 0.05 ? 0.05 : this->v;
+    x_new.v = this->v;
     x_new.w = this->w;
-    // Copy over from RK4
+    // Copy over from simTimeStep
     x_new.s = x0.s;
     x_new.vs = x0.vs;
-    
-    // x_new.s = x0.s + Ts*x0.vs + Ts*Ts/2*u0.dVs; // RK4 update
-    // x_new.D = x0.D + Ts * u0.dD;
-    // x_new.delta = x0.delta + Ts * u0.dDelta; 
-    // x_new.vs = x0.vs + Ts * u0.dVs;
 
     return x_new;
 }

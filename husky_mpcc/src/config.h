@@ -33,13 +33,12 @@ namespace mpcc{
 #define NU 3
 
 #define NB 10 // Number of bounds
-#define NPC 1 // Number of polytopic constraints
+#define NPC 3 // Number of polytopic constraints
 #define NS 1 // Number of slack variables
 
 static constexpr int N = 100;
 static constexpr double INF = 1E5;
 static constexpr int N_SPLINE = 5000;
-
 
 struct StateInputIndex{
     int X = 0;
@@ -55,8 +54,8 @@ struct StateInputIndex{
     int dVs = 2;
 
     int con_track = 0;
-    // int con_tire = 1;
-    // int con_alpha = 2;
+    int con_leftwheel = 1;
+    int con_rightwheel = 2;
 };
 
 static const StateInputIndex si_index;

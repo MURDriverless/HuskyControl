@@ -18,16 +18,12 @@
 #include "../config.h"
 #include "../types.h"
 #include "../Params/track.h"
-// #include <unsupported/Eigen/MatrixFunctions>
-// #include "../models/model_interface.h"
-// #include "../models/model_params.h"
 
 // ROS includes
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h> // Msg for /mur/slam/Odom topic
 #include <tf/tf.h> // For Convertion from Quartenion to Euler
 #include "mur_common/map_msg.h" // Msg for /mur/planner/map topic
-#include "mur_common/actuation_msg.h" // Msg for /mur/control/actuation topic
 #include "mur_common/transition_msg.h" // Msg for /mur/control/transition topic
 // #include <nav_msgs/Path.h> 
 // #include <geometry_msgs/PoseStamped.h>
@@ -40,7 +36,6 @@
 #define ODOM_TOPIC "/odometry/filtered"
 #define MAP_TOPIC "/mur/planner/map"
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
-#define ACTUATION_TOPIC "/mur/control/actuation"
 #define TRANSITION_TOPIC "/mur/control/transition"
 // #define CONE_TOPIC "/mur/slam/cones"
 // #define PATH_VIZ_TOPIC "/mur/planner/path_viz"
@@ -71,11 +66,9 @@ class FastLapControlNode {
     // ROS stuff
     ros::NodeHandle nh; // Create its specific node handler
     ros::Subscriber slamSubscriber;
-    ros::Subscriber mapSubscriber; // TODO: New topic publish from planner
-    // ros::Subscriber pathSubscriber;
+    ros::Subscriber mapSubscriber; 
     ros::Subscriber finalActuationSubscriber; // To obtain final actuation output of slow lap before transition
     ros::Publisher velocityPublisher;
-    ros::Publisher actuationPublisher;
     ros::Publisher transitionPublisher; // Publish so that slow lap can stop publishing actuation
 
     public:    
@@ -87,7 +80,7 @@ class FastLapControlNode {
     // Callback Function
     void slamCallback(const nav_msgs::Odometry& msg);
     void mapCallback(const mur_common::map_msg& msg);
-    void finalActuationCallback(const mur_common::actuation_msg& msg);
+    void finalActuationCallback(const geometry_msgs::Twist& msg);
     // void pathCallback();
     
     // Publish Function

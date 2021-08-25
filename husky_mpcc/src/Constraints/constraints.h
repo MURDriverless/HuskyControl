@@ -20,6 +20,8 @@
 #include "config.h"
 #include "Spline/arc_length_spline.h"
 #include "Model/model.h"
+#include "Params/params.h"
+
 namespace mpcc{
 struct ConstrainsMatrix {
     // dl <= C xk + D uk <= du
@@ -43,6 +45,8 @@ public:
     Constraints(double Ts,const PathToJson &path);
 private:
     OneDConstraint getTrackConstraints(const ArcLengthSpline &track,const State &x) const;
+    OneDConstraint getLeftWheelConstraints(const State &x) const;
+    OneDConstraint getRightWheelConstraints(const State &x) const;
 
     // OneDConstraint getTireConstraintRear(const State &x) const;
     // C_i_MPC getTireConstraintRearJac(const State &x) const;

@@ -50,6 +50,7 @@ public:
 
     double car_l;
     double car_w;
+    double husky_track;
 
     double g;
 

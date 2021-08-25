@@ -3,8 +3,13 @@
 # Disclaimer
 This branch is heavily based upon [Alex Liniger's MPCC](https://github.com/alexliniger/MPCC). It is using the version from the fullsize branch, commit 302e12a on 15 Jun 2021.
 
+Main changes:
+1. Using Unicycle Model, with Husky's own set of constraints
+2. ROS Implementation, with transition code from Slow Lap
+3. Slightly faster solve time for Discretization code
+
 ## Husky Dynamics
-A simple unicycle model is used in this version,
+A simple unicycle model is used in this version
 
 ### States
 ![unicycle](https://user-images.githubusercontent.com/78944454/129431697-3a2fe54c-337d-4d4b-92cb-442be8bf3487.png)
@@ -14,7 +19,6 @@ A simple unicycle model is used in this version,
 
 ### Additional Constraints
 ![w_constraint](https://user-images.githubusercontent.com/78944454/129431906-9bae518b-8d8c-44fb-8de1-f1004c24489f.png)
-
 
 ## Run in ROS, with simple sim
 1. Clone this package as a separate package to build
@@ -46,6 +50,8 @@ You may want to try and build the package from scratch, follow these steps.
 4. Clone this repo, replace everything except for External folder.
 
 ## To Do
-1. Check if more complex dynamics needed.
-2. Husky Sim can probably directly load models and world from mursim package, not sure how.
-3. Make it work in MURsim.  
+1. Test if setting soft constraint on w will result in better performance compared to hard bounding constraint.
+2. Physical Testing tunings.
+3. Test transition from Slow Lap in sim, then in real life.
+4. Lap Count, stop after 9 laps assuming 1 slow lap.
+5. Husky Sim can probably directly load models and world from mursim package, not sure how.

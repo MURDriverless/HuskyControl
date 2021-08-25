@@ -52,6 +52,7 @@ Param::Param(std::string file){
 
     car_l = jsonModel["car_l"];
     car_w = jsonModel["car_w"];
+    husky_track = jsonModel["husky_track"];
     
     g = jsonModel["g"];
     //Constraint Parameters

@@ -1,18 +1,11 @@
-// Copyright 2019 Alexander Liniger
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-///////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
+/**
+ * Husky Model Predictive Contouring Control
+ * 
+ * Part of Husky Controller Package, visit https://github.com/MURDriverless/HuskyControl for latest version and instructions on how to use
+ * This code is heavily based on Alex Liniger's MPCC repo @ https://github.com/alexliniger/MPCC
+ * 
+ * Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com
+ */
 
 // #include "Tests/spline_test.h"
 // #include "Tests/model_integrator_test.h"
@@ -51,6 +44,7 @@ void toc() {
     tictoc_stack.pop();
 }
 
+// Main
 int main(int argc, char **argv) {
     // Initialize ROS node
     ros::init(argc, argv, "husky_mpcc");
@@ -85,10 +79,7 @@ int main(int argc, char **argv) {
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     Plotting plotter = Plotting(jsonConfig["Ts"],json_paths);
 
-    // Track track = Track(json_paths.track_path);
-    // TrackPos track_xy = track.getTrack();
-
-    // Create ROS Node stuff
+    // Create ROS Node
     FastLapControlNode controlNode = FastLapControlNode();
     bool firstRun = true;
 
@@ -103,11 +94,9 @@ int main(int argc, char **argv) {
     TrackPos track_xy;
 
     // Set Ts
-    ros::Rate rate(jsonConfig["Hz"]); // 1/Ts, Ts = 0.1
+    ros::Rate rate(jsonConfig["Hz"]);
 
-    int count = 0;
-
-    // x0 = controlNode.initialize();
+    int count = 0; // For debug
 
     while(ros::ok())
     {
@@ -139,7 +128,7 @@ int main(int argc, char **argv) {
         } 
         if (skip)
         {
-            controlNode.fastlapready = true; // If want start fast lap immediately
+            controlNode.fastlapready = true; // Want start fast lap immediately
         }
         // Update 
         ros::spinOnce();
@@ -147,7 +136,7 @@ int main(int argc, char **argv) {
         // Fast Lap Control is ready
         if (firstRun && controlNode.getFastLapReady())
         {
-            ROS_INFO("RUNNING FIRST RUN");
+            // ROS_INFO("RUNNING FIRST RUN");
             if (skip)
             {
                 track = Track(json_paths.track_path);
@@ -170,57 +159,34 @@ int main(int argc, char **argv) {
             MPCReturn mpc_sol = mpc.runMPC(x0); // Updates s
             log.push_back(mpc_sol);
             x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Updates s and vs
+            controlNode.publishVel(x0.v, x0.w); // Command desired velocity
             if(comm)
             {
-                controlNode.publishVel(x0.v, x0.w);
-                x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]);
+                ros::spinOnce();
+                x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all states from SLAMe
             }
-
-            // controlNode.publishVel(x0.v, x0.w);
-            
             
             firstRun = false;
         }
 
         else if (controlNode.getFastLapReady())     
         {
+            ros::spinOnce();
             ROS_INFO("States:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w);
-            // ROS_INFO("s compare:\nsim.s:%lf\nupdate.s:%lf\n.", x0.s, s_state.s);
-            // ROS_INFO("Vs compare:\nsim.vs:%lf\nupdate.vs:%lf\n.", x0.vs, s_state.vs);
-            // ROS_INFO("D compare:\nsim.D:%lf\nupdate.D:%lf\n.", x0.D, s_state.D);
-            // ROS_INFO("delta compare:\nsim.delta:%lf\nupdate.delta:%lf\n.", x0.delta, s_state.delta);
+            ROS_INFO("Constraint State:\nvL:%lf\nvR:%lf\n", (x0.v-0.5*x0.w*0.555), (x0.v+0.5*x0.w*0.555));
             tic();
             MPCReturn mpc_sol = mpc.runMPC(x0); // Updates s
             toc();
-            // controlNode.publishActuation(mpc_sol.u0.dD, mpc_sol.u0.dDelta);
             log.push_back(mpc_sol);
 
-            x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Update state with RK4
-            // ROS_INFO("Acceleration input:\nState:%lf\nmpcsol:%lf\n.", x0.D, mpc_sol.u0.dD);
-            controlNode.publishVel(x0.v, x0.w);
+            x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Update s and vs
+            controlNode.publishVel(x0.v, x0.w); // Command desired velocity
             if(comm)
             {
                 ros::spinOnce();
-                x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update state with SLAM data 
+                x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all state with SLAM data 
             }
             
-            
-            // ROS_INFO_STREAM("Track Length" << track.path.getLength());
-
-            // Analyse execution time
-            // double mean_time = 0.0;
-            // double max_time = 0.0;
-            // for (OptSolution log_i : log) {
-            //     mean_time += log_i.exec_time;
-            //     if (log_i.exec_time > max_time) {
-            //         max_time = log_i.exec_time;
-            //     }
-            // }
-            // mean_time = mean_time / (double)(n_sim);
-            // cout << "Mean MPCC time: " << mean_time << endl;
-            // cout << "Max MPCC time: " << max_time << endl;
-            // cout << "i: " << i << endl;
-
             // TODO: Lap count
         }
 
@@ -229,18 +195,6 @@ int main(int argc, char **argv) {
             rate.sleep(); // Wait until Ts
         }
     }
-
-    // MPC mpc(jsonConfig["n_sqp"],jsonConfig["n_reset"],jsonConfig["sqp_mixing"],jsonConfig["Ts"],json_paths);
-    // mpc.setTrack(track_xy.X,track_xy.Y);
-    // const double phi_0 = std::atan2(track_xy.Y(1) - track_xy.Y(0),track_xy.X(1) - track_xy.X(0));
-    // State x0 = {track_xy.X(0),track_xy.Y(0),phi_0,jsonConfig["v0"],0,0,0,0.5,0,jsonConfig["v0"]};
-    // for(int i=0;i<jsonConfig["n_sim"];i++)
-    // {
-    //     MPCReturn mpc_sol = mpc.runMPC(x0);
-    //     x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]);
-    //     log.push_back(mpc_sol);
-    // }
-    // plotter.plotRun(log,track_xy);
 }
 
 
