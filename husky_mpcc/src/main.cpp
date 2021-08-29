@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     Plotting plotter = Plotting(jsonConfig["Ts"],json_paths);
 
     // Create ROS Node
-    FastLapControlNode controlNode = FastLapControlNode();
+    FastLapControlNode controlNode = FastLapControlNode(json_paths);
     bool firstRun = true;
 
     // ROS INFO
@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
     std::list<MPCReturn> log;
     Track track;
     TrackPos track_xy;
+    ArcLengthSpline track_; // parameterized track
 
     // Set Ts
     ros::Rate rate(jsonConfig["Hz"]);
@@ -100,7 +101,7 @@ int main(int argc, char **argv) {
 
     while(ros::ok())
     {
-        if (!comm)
+        if (!comm) // Simple sim test without Gazebo/RVIZ
         {
             if (count > jsonConfig["n_sim"])
             {
@@ -126,9 +127,9 @@ int main(int argc, char **argv) {
                 std::cout << "count: " << count << std::endl;
             }
         } 
-        if (skip)
+        if (skip) // Want start fast lap immediately
         {
-            controlNode.fastlapready = true; // Want start fast lap immediately
+            controlNode.fastlapready = true; 
         }
         // Update 
         ros::spinOnce();
@@ -152,7 +153,7 @@ int main(int argc, char **argv) {
                 x0 = controlNode.initialize();
             }
             
-            mpc.setTrack(track_xy.X,track_xy.Y);
+            track_ = mpc.setTrack(track_xy.X,track_xy.Y);
 
             ROS_INFO("Starting State:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w); 
             
@@ -167,6 +168,7 @@ int main(int argc, char **argv) {
             }
             
             firstRun = false;
+            controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
         }
 
         else if (controlNode.getFastLapReady())     
@@ -187,6 +189,7 @@ int main(int argc, char **argv) {
                 x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all state with SLAM data 
             }
             
+            controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
             // TODO: Lap count
         }
 

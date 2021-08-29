@@ -265,9 +265,9 @@ MPCReturn MPC::runMPC(State &x0)
     return {initial_guess_[0].uk,initial_guess_,time_nmpc};
 }
 
-void MPC::setTrack(const Eigen::VectorXd &X, const Eigen::VectorXd &Y){
+ArcLengthSpline MPC::setTrack(const Eigen::VectorXd &X, const Eigen::VectorXd &Y){
     track_.gen2DSpline(X,Y);
+    return track_;
 }
-
 
 }

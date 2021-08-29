@@ -24,7 +24,7 @@
     
     <!--################# RVIZ ###################-->
     <group if="$(arg rviz)">
-		<include file="$(find husky_viz)/launch/view_robot.launch"/>
+		<node type="rviz" name="rviz" pkg="rviz" args="-d $(find husky_mpcc)/rviz/mpcc_rviz_config.rviz"/>
 	</group>
     
     <!--################ Package #################-->
