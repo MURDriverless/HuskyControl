@@ -8,6 +8,7 @@
  */
 
 #include "constraints.h"
+
 namespace mpcc{
 Constraints::Constraints()
 {   
@@ -16,7 +17,8 @@ Constraints::Constraints()
 
 Constraints::Constraints(double Ts,const PathToJson &path) 
 :model_(Ts,path),
-param_(Param(path.param_path))
+param_(Param(path.param_path)),
+bounds_(BoundsParam(path.bounds_path))
 {
 }
 
@@ -44,6 +46,9 @@ OneDConstraint Constraints::getTrackConstraints(const ArcLengthSpline &track,con
     const double track_constraint_lower = tan_center(0)*pos_inner(0) + tan_center(1)*pos_inner(1);
     const double track_constraint_upper = tan_center(0)*pos_outer(0) + tan_center(1)*pos_outer(1);
 
+    // std::cout << "Lower track constraint:" << pos_outer << std::endl;
+    // std::cout << "Upper track constraint:" << pos_inner << std::endl;
+
     return {C_track_constraint,track_constraint_lower,track_constraint_upper};
 }
 
@@ -69,8 +74,8 @@ OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
     C_vL_constraint(si_index.w) = -0.5*param_.husky_track; // Partial derivative to w
 
     // Bound from bounds.json
-    const double vL_constraint_lower = -1.0;
-    const double vL_constraint_upper = 1.0;
+    const double vL_constraint_lower = bounds_.lower_state_bounds.v_l;
+    const double vL_constraint_upper = bounds_.upper_state_bounds.v_u;
 
     return {C_vL_constraint,vL_constraint_lower,vL_constraint_upper};
 }
@@ -97,8 +102,8 @@ OneDConstraint Constraints::getRightWheelConstraints(const State &x) const
     C_vR_constraint(si_index.w) = 0.5*param_.husky_track; // Partial derivative to w
 
     // Bound from bounds.json
-    const double vR_constraint_lower = -1.0;
-    const double vR_constraint_upper = 1.0;
+    const double vR_constraint_lower = bounds_.lower_state_bounds.v_l;
+    const double vR_constraint_upper = bounds_.upper_state_bounds.v_u;
 
     return {C_vR_constraint,vR_constraint_lower,vR_constraint_upper};
 }
