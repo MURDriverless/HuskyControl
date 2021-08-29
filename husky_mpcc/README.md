@@ -22,8 +22,9 @@ A simple unicycle model is used in this version
 
 ## Run in ROS, with simple sim
 1. Clone this package as a separate package to build
-2. `catkin build` then `source devel/setup.bash`
-3. `rosrun husky_mpcc husky_mpcc -0 -1`
+2. run `install.sh` to install dependencies
+3. `catkin build` then `source devel/setup.bash`
+4. `rosrun husky_mpcc husky_mpcc -0 -1`
 
 ## To test EUFS/Small track in Gazebo Simulation (Using Husky Sim)
 1. Install [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
