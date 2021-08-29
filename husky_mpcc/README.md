@@ -22,7 +22,7 @@ A simple unicycle model is used in this version
 
 ## Run in ROS, with simple sim
 1. Clone this package as a separate package to build
-2. run `install.sh` to install dependencies
+2. Run `sudo ./install.sh` to install dependencies into External folder. If it says file not found, try `sudo chmod +x install.sh` 
 3. `catkin build` then `source devel/setup.bash`
 4. `rosrun husky_mpcc husky_mpcc -0 -1`
 
