@@ -56,6 +56,7 @@ private:
 
     Model model_;
     Param param_;
+    BoundsParam bounds_;
 };
 }
 
