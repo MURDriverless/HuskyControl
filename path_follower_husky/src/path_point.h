@@ -10,6 +10,7 @@ struct PathPoint
     float radius = 0;
     float velocity = 0; 
     float angle = 0;
+    bool passedBy = false;
     void updatePoint(float, float);
     void updatePoint(PathPoint);
 };

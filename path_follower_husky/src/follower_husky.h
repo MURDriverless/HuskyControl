@@ -6,6 +6,7 @@
 #include <nav_msgs/Odometry.h>      // Msg from /odometry/filtered
 #include <tf/tf.h>                  // For Convertion from Quartenion to Euler
 #include "mur_common/path_msg.h"    // path msg from mur_common
+#include "mur_common/transition_msg.h"
 #include <cmath>
 #include <sstream>
 #include <string>
@@ -24,9 +25,9 @@
 #define MAX_DECEL -17.658           //-1.8*Gg copied from Dennis
 #define MAX_STEER 0.8               // Copied from Dennis
 #define STEPSIZE 0.1                // spline step size 
-#define SPLINE_N 10                 // number of points to spline
+#define SPLINE_N 6                 // number of points to spline
 #define DT 0.05
-#define STOP_INDEX 3                // centre point where the car should stop
+#define STOP_INDEX 2                // centre point where the car should stop
 
 //PID gains:
 #define KP 1   
@@ -40,13 +41,14 @@
 #define V_CONST 1.0                  // constant velocity 1m/s (for now)
 #define MAX_V 0.8                    // for Husky, test only, should be 1m/s to match mur car
 #define MAX_W 30                     // for Husky, angular velo in degrees
-#define HZ 10                        // ROS spin frequency (can increase to 20)
+#define HZ 24                        // ROS spin frequency (can increase to 20)
 
 // ROS topics
 #define ODOM_TOPIC "/odometry/filtered"                     //"/mur/slam/Odom" in murSim
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"   
 #define PATH_TOPIC "/mur/planner/path"
-#define PATH_VIZ_TOPIC "/mur/planner/path_viz"
+#define PATH_VIZ_TOPIC2 "/mur/follower/path_viz"
+#define FASTLAP_READY_TOPIC "/mur/control/transition"
 
 const bool DEBUG = true;              //to show debug messages in terminal, switch to false to turn off
 
@@ -56,12 +58,14 @@ public:
     HuskyFollower(ros::NodeHandle n, double max_v, double max_w);
     void spin();
     bool slowLapFinish = false;
+    bool fastLapReady = false;
 
 private:
 
     ros::NodeHandle nh;
     ros::Subscriber sub_odom;
     ros::Subscriber sub_path;
+    ros::Subscriber sub_transition;
     ros::Publisher pub_control;
     ros::Publisher pub_accel;
     ros::Publisher pub_steer;
@@ -79,16 +83,21 @@ private:
     double car_lin_v;                    // car linear velocity
     double car_ang_v;                    // car angulr velocity (for Husky only)
     double car_yaw;                      // car yaw in Euler angle
+    double initX = 0;
+    double initY = 0;
+    double initYaw = 0;
+    bool reinitialise = false;
 
     bool odom_msg_received = false;
     bool new_centre_points = false;
+    int cenPoints_updated = 0;
 
     std::vector<double> path_x;          
     std::vector<double> path_y;
     std::vector<PathPoint> centre_points;       // centre line points of race tack, from path planner
     std::vector<PathPoint> centre_splined;      // splined centre line points, see func generateSpline()
     std::vector<PathPoint> centre_endOfLap;     // path to follow when almost end of lap
-    PathPoint currentGoalPoint = PathPoint(0,0);
+    PathPoint currentGoalPoint = PathPoint(car_x,car_y);
 
     // temp vectors for splining
     std::vector<double> xp;
@@ -99,7 +108,8 @@ private:
     bool newGP = false;
     bool endOfPath = false;
     bool endOfLap = false;
-    bool stopSpline = false;    
+    bool stopSpline = false; 
+    bool plannerComplete = false;   
     int index = -1;                              // index in centre_splined for goal point
     int oldIndex = -1;                           // index in centre_splined for goal point
     int index_endOfLap = 1/STEPSIZE;             // index in centre_endOfLap for goal point
@@ -113,6 +123,7 @@ private:
     void waitForMsgs();
     int launchSubscribers();
     int launchPublishers();
+    void transitionCallback(const mur_common::transition_msg &msg);
     void odomCallback(const nav_msgs::Odometry &msg);
     void pathCallback(const mur_common::path_msg &msg);
     void publishCtrl();
@@ -120,8 +131,9 @@ private:
 
     void steeringControl();             // see cpp file for description
     void generateSplines();             // see cpp file for description
-    double getDistFromCar(PathPoint);    // to compute distance of point to current car pose
-    double getAngleFromCar(PathPoint);   // to compute angle differene of a point to current car yaw 
+    double getDistFromCar(PathPoint&);    // to compute distance of point to current car pose
+    double getAngleFromCar(PathPoint&);   // to compute angle differene of a point to current car yaw 
+    double calcDist(const PathPoint &p1, const PathPoint &p2);
     void clearVars();                   // clear temporary variables, vectors
     void getGoalPoint();                // see cpp file for description
     double getSign(double&);              
