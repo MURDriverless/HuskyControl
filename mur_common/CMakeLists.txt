@@ -15,6 +15,8 @@ add_message_files(DIRECTORY msg
    path_msg.msg
    diagnostic_msg.msg
    timing_msg.msg
+   map_msg.msg
+   transition_msg.msg
  )
 
 generate_messages(
