@@ -303,7 +303,7 @@ void FastLapControlNode::publishRVIZ(const std::array<mpcc::OptVariables,mpcc::N
 
         // Initialize msgs
         geometry_msgs::Point p;
-        p.z = 0.5;
+        p.z = 0.223; // heigh of husky bumper
 
         // inner
         p.x = pos_inner(0);
