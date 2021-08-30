@@ -15,9 +15,12 @@
 
 // General & MPCC includes
 #include <cmath>
-#include "../config.h"
-#include "../types.h"
-#include "../Params/track.h"
+#include "config.h"
+#include "types.h"
+#include "Params/track.h"
+#include "Params/params.h"
+#include "Spline/arc_length_spline.h"
+#include "MPC/mpc.h"
 
 // ROS includes
 #include <ros/ros.h>
@@ -25,21 +28,13 @@
 #include <tf/tf.h> // For Convertion from Quartenion to Euler
 #include "mur_common/map_msg.h" // Msg for /mur/planner/map topic
 #include "mur_common/transition_msg.h" // Msg for /mur/control/transition topic
-// #include <nav_msgs/Path.h> 
-// #include <geometry_msgs/PoseStamped.h>
-// #include <geometry_msgs/Pose.h>
-// #include <geometry_msgs/Point.h>
-// #include "mur_common/cone_msg.h"
-// #include "mur_common/diagnostic_msg.h"
+#include <visualization_msgs/Marker.h> // for RVIZ markers
 
-// #define ODOM_TOPIC "/mur/slam/Odom"
 #define ODOM_TOPIC "/odometry/filtered"
 #define MAP_TOPIC "/mur/planner/map"
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
 #define TRANSITION_TOPIC "/mur/control/transition"
-// #define CONE_TOPIC "/mur/slam/cones"
-// #define PATH_VIZ_TOPIC "/mur/planner/path_viz"
-// #define HEALTH_TOPIC "/mur/planner/topic_health"
+#define RVIZ_TOPIC "/mpcc_RVIZ_topic"
 
 class FastLapControlNode {
     private:
@@ -70,12 +65,13 @@ class FastLapControlNode {
     ros::Subscriber finalActuationSubscriber; // To obtain final actuation output of slow lap before transition
     ros::Publisher velocityPublisher;
     ros::Publisher transitionPublisher; // Publish so that slow lap can stop publishing actuation
+    ros::Publisher RVIZPublisher; // Visualize horizon and track boundary
 
     public:    
     bool fastlapready; // Skip to fast lap
     
     // Constructor
-    FastLapControlNode();
+    FastLapControlNode(const mpcc::PathToJson &path);
 
     // Callback Function
     void slamCallback(const nav_msgs::Odometry& msg);
@@ -96,6 +92,11 @@ class FastLapControlNode {
     // Functions for vehicle state
     mpcc::State initialize();
     mpcc::State update(const mpcc::State& x0, const mpcc::Input& u0, double Ts);
+
+    // RVIZ Functions
+    void publishRVIZ(const std::array<mpcc::OptVariables,mpcc::N+1> mpc_horizon, const mpcc::ArcLengthSpline &track);
+
+    mpcc::Param param_;
 };
 
 // Returns 1 if positive, 0 if 0, -1 if negative
