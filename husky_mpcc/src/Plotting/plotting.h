@@ -32,7 +32,7 @@ namespace mpcc {
 class Plotting {
 public:
     void plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
-    void plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy) const;
+    void plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy, const mpcc::ArcLengthSpline &track) const;
 
     Plotting(double Ts, PathToJson path);
 

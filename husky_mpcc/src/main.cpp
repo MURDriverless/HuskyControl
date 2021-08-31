@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
     ros::Rate rate(jsonConfig["Hz"]);
 
     int count = 0; // For debug
+    int violate = 0; // Constraint testing
 
     while(ros::ok())
     {
@@ -118,7 +119,8 @@ int main(int argc, char **argv) {
                 // std::cout << "mean nmpc time " << mean_time/double(jsonConfig["n_sim"]) << std::endl;
                 std::cout << "mean nmpc time " << mean_time/count << std::endl;
                 std::cout << "max nmpc time " << max_time << std::endl;
-                plotter.plotSim(log,track_xy);
+                std::cout << "wheel violation count " << violate << std::endl;
+                plotter.plotSim(log,track_xy, track_);
                 return 0;
             }
             else
@@ -169,6 +171,11 @@ int main(int argc, char **argv) {
             
             firstRun = false;
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
+
+            if (abs(x0.v-0.5*x0.w*0.555) > 1 || abs(x0.v+0.5*x0.w*0.555) > 1)
+            {
+                violate++;
+            }
         }
 
         else if (controlNode.getFastLapReady())     
@@ -190,6 +197,12 @@ int main(int argc, char **argv) {
             }
             
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
+
+            if (abs(x0.v-0.5*x0.w*0.555) > 1 || abs(x0.v+0.5*x0.w*0.555) > 1)
+            {
+                violate++;
+            }
+            
             // TODO: Lap count
         }
 

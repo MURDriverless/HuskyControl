@@ -178,6 +178,7 @@ mpcc::Track FastLapControlNode::generateTrack()
 
     // // Write current track as json
     // json json_track;
+    // json_track["Factor"] = 1;
     // json_track["X_o"] = x_outer;
     // json_track["X_i"] = x_inner;
     // json_track["Y_o"] = y_outer;
@@ -185,7 +186,7 @@ mpcc::Track FastLapControlNode::generateTrack()
     // json_track["X"] = x_centre;
     // json_track["Y"] = y_centre;
 
-    // std::ofstream file("/workspace/track.json");
+    // std::ofstream file("/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/testtrack.json");
     // file << json_track;
 
     return track;
@@ -303,7 +304,7 @@ void FastLapControlNode::publishRVIZ(const std::array<mpcc::OptVariables,mpcc::N
 
         // Initialize msgs
         geometry_msgs::Point p;
-        p.z = 0.223; // heigh of husky bumper
+        p.z = 0.223; // height of husky bumper
 
         // inner
         p.x = pos_inner(0);
