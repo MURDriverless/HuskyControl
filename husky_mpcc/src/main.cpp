@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     bool skip = atoi(argv[2]);
 
     using namespace mpcc;
-    std::ifstream iConfig("/home/khengyu/catkin_ws/src/husky_mpcc/src/Params/config.json");
+    std::ifstream iConfig("/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/config.json");
     json jsonConfig;
     iConfig >> jsonConfig;
 

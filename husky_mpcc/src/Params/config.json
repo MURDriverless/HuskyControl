@@ -8,9 +8,9 @@
   "Hz": 6,
   "v0": 1.0,
   
-  "model_path": "/home/khengyu/catkin_ws/src/husky_mpcc/src/Params/model.json",
-  "cost_path": "/home/khengyu/catkin_ws/src/husky_mpcc/src/Params/cost.json",
-  "bounds_path": "/home/khengyu/catkin_ws/src/husky_mpcc/src/Params/bounds.json",
-  "track_path": "/home/khengyu/catkin_ws/src/husky_mpcc/src/Params/track.json",
-  "normalization_path": "/home/khengyu/catkin_ws/src/husky_mpcc/src/Params/normalization.json"
+  "model_path": "/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/model.json",
+  "cost_path": "/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/cost.json",
+  "bounds_path": "/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/bounds.json",
+  "track_path": "/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/track.json",
+  "normalization_path": "/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/normalization.json"
 }
