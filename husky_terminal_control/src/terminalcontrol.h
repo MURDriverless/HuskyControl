@@ -21,7 +21,6 @@
 #include <cmath>
 #include <sstream>
 #include <vector>
-#include "spline.h"
 
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
 #define ODOM_TOPIC "/odometry/filtered"
