@@ -498,7 +498,7 @@ void PathPlanner::centralizeTimingCones()
 	
 	//this will potentially give an error especially if car's initial pose is very close to this point
 	// if (dist > 0.1*TRACKWIDTH && dist < TRACKWIDTH && (abs(angle)<10))
-	if  (abs(angle)<10)
+	if  (abs(angle)<90)
 	{
 		centre_points.push_back(avg_point);
 		if (DEBUG) std::cout << "Average timing cones position calculated" <<std::endl;
