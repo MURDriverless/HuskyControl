@@ -4,7 +4,7 @@
   "qL" : 1000,
   "qVs" : 5,
 
-  "qMu": 1,
+  "qMu": 10,
 
   "qW" : 10,
 
@@ -22,11 +22,11 @@
   "qCNmult": 10,
   "qWNmult": 30,
 
-  "sc_quad_track": 100.0,
-  "sc_quad_tire": 100.0,
-  "sc_quad_alpha": 100.0, 
+  "sc_quad_track": 1E2,
+  "sc_quad_tire": 1E4,
+  "sc_quad_alpha": 1E4, 
 
-  "sc_lin_track": 10.0,
-  "sc_lin_tire": 10.0,
-  "sc_lin_alpha": 10.0
+  "sc_lin_track": 1E1,
+  "sc_lin_tire": 1E2,
+  "sc_lin_alpha": 1E2
 }

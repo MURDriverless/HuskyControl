@@ -168,14 +168,16 @@ int main(int argc, char **argv) {
                 ros::spinOnce();
                 x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all states from SLAMe
             }
+
+            if (abs(x0.v-0.5*x0.w*0.555) > 1.001 || abs(x0.v+0.5*x0.w*0.555) > 1.001)
+            {
+                violate++;
+                ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
+            }
             
             firstRun = false;
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
 
-            if (abs(x0.v-0.5*x0.w*0.555) > 1 || abs(x0.v+0.5*x0.w*0.555) > 1)
-            {
-                violate++;
-            }
         }
 
         else if (controlNode.getFastLapReady())     
@@ -190,6 +192,13 @@ int main(int argc, char **argv) {
 
             x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Update s and vs
             controlNode.publishVel(x0.v, x0.w); // Command desired velocity
+
+            if (abs(x0.v-0.5*x0.w*0.555) > 1.001 || abs(x0.v+0.5*x0.w*0.555) > 1.001)
+            {
+                violate++;
+                ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
+            }
+
             if(comm)
             {
                 ros::spinOnce();
@@ -197,11 +206,6 @@ int main(int argc, char **argv) {
             }
             
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
-
-            if (abs(x0.v-0.5*x0.w*0.555) > 1 || abs(x0.v+0.5*x0.w*0.555) > 1)
-            {
-                violate++;
-            }
             
             // TODO: Lap count
         }

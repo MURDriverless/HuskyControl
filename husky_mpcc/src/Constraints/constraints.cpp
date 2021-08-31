@@ -57,6 +57,8 @@ OneDConstraint Constraints::getTrackConstraints(const ArcLengthSpline &track,con
 // 1m/s linear velocity and some amount of angular velocity
 OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
 {
+    const StateVector x_vec = stateToVector(x);
+
     // Obtain current velocity
     const double v = x.v;
     const double w = x.w;
@@ -65,7 +67,7 @@ OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
     // v = (vL + vR)*0.5
     // w = (vR - vL)/0.555, where 0.555 is the effective width of Husky, signified by param_.husky_track
     // Rearrange, and you'll get
-    // vL = v - 0.5*w*param_.husky_track;
+    const double vL = v - 0.5*w*param_.husky_track;
     // vR = v + 0.5*w*param_.husky_track;
 
     // Make Constraint matrix
@@ -74,8 +76,11 @@ OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
     C_vL_constraint(si_index.w) = -0.5*param_.husky_track; // Partial derivative to w
 
     // Bound from bounds.json
-    const double vL_constraint_lower = bounds_.lower_state_bounds.v_l;
-    const double vL_constraint_upper = bounds_.upper_state_bounds.v_u;
+    // const double vL_constraint_lower = bounds_.lower_state_bounds.v_l;
+    // const double vL_constraint_upper = bounds_.upper_state_bounds.v_u;
+
+    const double vL_constraint_lower = bounds_.lower_state_bounds.v_l - vL + C_vL_constraint*x_vec;
+    const double vL_constraint_upper = bounds_.upper_state_bounds.v_u - vL + C_vL_constraint*x_vec;
 
     return {C_vL_constraint,vL_constraint_lower,vL_constraint_upper};
 }
@@ -85,6 +90,8 @@ OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
 // 1m/s linear velocity and some amount of angular velocity
 OneDConstraint Constraints::getRightWheelConstraints(const State &x) const
 {
+    const StateVector x_vec = stateToVector(x);
+
     // Obtain current velocity
     const double v = x.v;
     const double w = x.w;
@@ -94,16 +101,20 @@ OneDConstraint Constraints::getRightWheelConstraints(const State &x) const
     // w = (vR - vL)/0.555, where 0.555 is the effective width of Husky, signified by param_.husky_track
     // Rearrange, and you'll get
     // vL = v - 0.5*w*param_.husky_track;
-    // vR = v + 0.5*w*param_.husky_track;
+    const double vR = v + 0.5*w*param_.husky_track;
 
     // Make Constraint matrix
     C_i_MPC C_vR_constraint = C_i_MPC::Zero();
     C_vR_constraint(si_index.v) = 1; // Partial derivative to v
     C_vR_constraint(si_index.w) = 0.5*param_.husky_track; // Partial derivative to w
 
+    // compute the bounds given the Tylor series expansion
+    // const double alpha_constraint_lower = -param_.max_alpha-alpha_f+C_alpha_constraint*x_vec;
+    // const double alpha_constraint_upper =  param_.max_alpha-alpha_f+C_alpha_constraint*x_vec;
+
     // Bound from bounds.json
-    const double vR_constraint_lower = bounds_.lower_state_bounds.v_l;
-    const double vR_constraint_upper = bounds_.upper_state_bounds.v_u;
+    const double vR_constraint_lower = bounds_.lower_state_bounds.v_l - vR + C_vR_constraint*x_vec;
+    const double vR_constraint_upper = bounds_.upper_state_bounds.v_u - vR + C_vR_constraint*x_vec;
 
     return {C_vR_constraint,vR_constraint_lower,vR_constraint_upper};
 }
