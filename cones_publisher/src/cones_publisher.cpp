@@ -1,6 +1,7 @@
 /**
  * This publishes cone positions
  * by Aldrei MURauto21
+ *
  * **/
 
 
@@ -120,8 +121,9 @@ void ConesPublisher::trueConesCallback(const mur_common::cone_msg &msg)
             // }
             // true_cones.back().position.x -= -2.5;
             // true_cones.back().position.y -= 0;
-        }
+            }
         trueCones_msg_received = true;
+        }
     }
 }
 
@@ -136,7 +138,7 @@ void ConesPublisher::publishCones()
     cones.header.stamp = current_time;
     int i = 0;
     if (DEBUG) std::cout<<"seen cones: ";
-    for (auto cn:seen_cones) ////
+    for (auto &cn:seen_cones) ////
     {
         cones.x.push_back(cn.uncertainPos.x);
         cones.y.push_back(cn.uncertainPos.y);
