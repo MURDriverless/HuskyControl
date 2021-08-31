@@ -1,10 +1,22 @@
+/**
+ * This is the Path follower for the husky
+ * it receives path information from path planner
+ * then passes actuation commands to the Husky
+ * 
+ * uses pure pursuit controller, velocity is constant for now
+ * 
+ * see header file for descriptions of member variables
+ * author: Aldrei (MURauto21)
+*/
+
 #include "follower_husky.h"
 #include <iostream>
 
+// constructor
 HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w)
                 :nh(n), max_v(max_v),max_w(max_w)
 {
-    //specify minimum size of vectors
+    //set capacity of vectors
     path_x.reserve(500);
     path_y.reserve(500);
     centre_points.reserve(500);
@@ -25,6 +37,7 @@ HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w)
     ROS_INFO_STREAM("[FOLLOWER] follower initialized, publisher and subscriber launched!");
 }
 
+// spinonce when msgs are received
 void HuskyFollower::waitForMsgs()
 {
     if (!path_msg_received || !odom_msg_received && ros::ok()) 
@@ -33,6 +46,7 @@ void HuskyFollower::waitForMsgs()
     }
 }
 
+// void loop()
 void HuskyFollower::spin()
 {
     waitForMsgs();
@@ -41,11 +55,14 @@ void HuskyFollower::spin()
     pushPathViz();
     clearVars();
 
+    //needs at least 2 path points
     if (centre_points.size()<2) reinitialise = true;
-
+    // std::cout<<"[FOLLOWER] current car pos: ("<<car_x<<", "<<car_y<<")  ";
+    // std::cout<<"vel: "<<lin_velocity<<"ang_vel: "<<ang_velocity<<std::endl;
     ros::Rate(HZ).sleep();
 }
 
+// clear temporary vectors and flags
 void HuskyFollower::clearVars()
 {
     path_x.clear();
@@ -60,27 +77,28 @@ void HuskyFollower::clearVars()
     T.clear();
 }
 
+//standard ROS func
 int HuskyFollower::launchSubscribers()
 {
     sub_odom = nh.subscribe(ODOM_TOPIC, 1, &HuskyFollower::odomCallback, this);
 	sub_path = nh.subscribe(PATH_TOPIC, 1, &HuskyFollower::pathCallback, this);
     sub_transition = nh.subscribe(FASTLAP_READY_TOPIC, 1, &HuskyFollower::transitionCallback, this);
-    
 }
 
+//standard ROS func
 int HuskyFollower::launchPublishers()
 {
     pub_control = nh.advertise<geometry_msgs::Twist>(CMDVEL_TOPIC, 1);
     pub_path_viz = nh.advertise<nav_msgs::Path>(PATH_VIZ_TOPIC2, 1);
 }
 
+//standard ROS func. gets transition msg from fast lap
 void HuskyFollower::transitionCallback(const mur_common::transition_msg &msg)
 {
     fastLapReady = msg.fastlapready;
 }
 
 // get odometry messages
-// convert Quat to Euler yaw 
 void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
 {
     
@@ -100,11 +118,10 @@ void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
     double q_z = msg.pose.pose.orientation.z;
     double q_w = msg.pose.pose.orientation.w;
 
-    // this->phi = Quart2EulerYaw(q_x, q_y, q_z, q_w); // rads
-
     car_lin_v = msg.twist.twist.linear.x;
     car_ang_v = msg.twist.twist.angular.z;
 
+    // convert quaternions to euler
     tf::Quaternion q(q_x, q_y, q_z, q_w);
     tf::Matrix3x3 m(q);
     double roll, pitch, yaw;
@@ -114,21 +131,30 @@ void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
     odom_msg_received = true;
 }
 
+//get path msgs from path planner
 void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
 {   
-    if (calcDist(centre_points.back(),PathPoint(msg.x.back(),msg.y.back()))>0.1)
+    int j =0;
+    for (int i=centre_points.size()-1; i>=0 ;i--)
     {
-        new_centre_points = true;
+        if (calcDist(centre_points[i],PathPoint(msg.x.back(),msg.y.back()))>0.1)
+        {
+            new_centre_points = true;
+            break;
+        }
+        if (j>3) break;
+        j++;
+    }
+    
+    if (centre_points.empty() || new_centre_points)
+    {
         centre_points.clear();
-        
         for (int i=0; i < msg.x.size(); i++)
         {
             centre_points.emplace_back(msg.x[i],msg.y[i]);
         }
         generateSplines();
     }
-    else
-    std::cout<<"pathCallback else dist: "<<calcDist(centre_points.back(),PathPoint(msg.x.back(),msg.y.back()))<<std::endl;
 
     //check if lap is complete
     if (calcDist(centre_points.front(),centre_splined.back())<0.02)
@@ -139,8 +165,7 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
 
 
 
-// publish path to RVIZ
-// For Husky testing only, this is supposed to be in path planner
+// publish splined path to RVIZ
 void HuskyFollower::pushPathViz()
 {
     nav_msgs::Path path_viz_msg;
@@ -186,18 +211,18 @@ void HuskyFollower::steeringControl()
         return; //to ignore rest of function
     }
     
-    else if (centre_points.size() < 2) //go straight but slowly until more points are discovered
-    {
-        lin_velocity = 0.2;
-        ang_velocity = 0.0;
-        return; //to ignore rest of function
-    }
+    //go straight but slowly until more points are discovered
+    // this could cause errors. might need to delete later
+    // else if (centre_points.size() < 3) 
+    // {
+    //     lin_velocity = 0.2;
+    //     ang_velocity = 0.0;
+    //     return; //to ignore rest of function
+    // }
 
     double dist = getDistFromCar(currentGoalPoint);
-
     if (endOfLap)
     {
-         
         // lin_velocity = 0;
         // ang_velocity = 0;
         ROS_INFO_STREAM("[FOLLOWER] SLOW LAP FINISHED! waiting for fast lap ready...");
@@ -205,8 +230,8 @@ void HuskyFollower::steeringControl()
           
     }
 
-    
-    if (Lf > dist)
+    // check if need to change goal pt 
+    if (Lf > dist) 
         getGoalPoint();
 
     if (endOfPath)
@@ -219,7 +244,6 @@ void HuskyFollower::steeringControl()
             endOfLap = true;
             index = -1;
             getGoalPoint();
-            // generateSplines(); //trigger splining of centre_endOfPath
         }
     }
     else
@@ -234,6 +258,7 @@ void HuskyFollower::steeringControl()
     ang_velocity = abs(KP * angle) >= max_w ? getSign(angle)*max_w : KP * angle;
 }
 
+// calculate distance between 2 points
 double HuskyFollower::calcDist(const PathPoint &p1, const PathPoint &p2)
 {
     float x_dist = pow(p2.x - p1.x, 2);
@@ -242,6 +267,7 @@ double HuskyFollower::calcDist(const PathPoint &p1, const PathPoint &p2)
     return sqrt(x_dist + y_dist);
 }
 
+//calculate distance of a point to the car
 double HuskyFollower::getDistFromCar(PathPoint& pnt) 
 {
     double dX = car_x - pnt.x;
@@ -249,6 +275,7 @@ double HuskyFollower::getDistFromCar(PathPoint& pnt)
     return sqrt((dX*dX) + (dY*dY));
 }
 
+// calculate the angle of a point wrt car
 double HuskyFollower::getAngleFromCar(PathPoint& pnt)
 {
     double dX = pnt.x - car_x;
@@ -278,7 +305,7 @@ void HuskyFollower::generateSplines()
   
     
     //there must be at least 3 points for cubic spline to work
-    else if (centre_points.size() == 2) //if only 2, make a line
+    if (centre_points.size() == 2) //if only 2, make a line
     {
         double tempX, tempY;
         for (auto p:centre_points)
@@ -295,8 +322,6 @@ void HuskyFollower::generateSplines()
             tempX = slopeX * i;
             centre_splined.emplace_back(tempX,tempY);
         }
-        // if (DEBUG) std::cout<<"[splines] new centre_splined size is: "<<centre_splined.size()<<std::endl;
-        
     }
 
     else if (centre_points.size()>SPLINE_N) //we will only spline the last N points as it is computationally expensive
@@ -328,7 +353,7 @@ void HuskyFollower::generateSplines()
         if (endOfPath && plannerComplete) std::cout<<"[FOLLOWER] Splined last sections of the track!"<< std::endl;
     }
 
-    else //for 2 < centre points size < 10 
+    else //for 2 < centre points size < N 
     {
         //separate x and y values
         int t=0;
@@ -352,7 +377,6 @@ void HuskyFollower::generateSplines()
         {
             centre_splined.emplace_back(sx(i),sy(i));
         }
-        // if (DEBUG) std::cout<<"[splines] new centre_splined size is: "<<centre_splined.size()<<std::endl;
     }
        
 }
@@ -366,27 +390,11 @@ void HuskyFollower::generateSplines()
 **/
 void HuskyFollower::getGoalPoint()
 {
-    // if (endOfLap) //if end of lap, change reference path to centre_endOfLap
-    // {
-    //     currentGoalPoint.updatePoint(centre_endOfLap[index_endOfLap]); 
-    //     if ((Lf/2) > getDistFromCar(currentGoalPoint))
-    //     {
-    //         index_endOfLap ++;
-    //         currentGoalPoint.updatePoint(centre_endOfLap[index_endOfLap]); 
-
-    //         if (index_endOfLap >= centre_endOfLap.size()-1) //last point/ stopping point
-    //             index_endOfLap = centre_endOfLap.size()-2;
-    //     }
-
-    //     if (DEBUG) std::cout << "end of lap goal near" << std::endl;   
-    //     return; //so it wont run the rest of this function
-    // }
-
     double temp; //temporary var
     double dist = 99999.1; //random large number
 
     //step 1: look for the point nearest to the car
-    if (index == -1 || oldIndex == -1) //first iteration
+    if (index == -1 || oldIndex == -1)
     {
         for (int i = 0; i < centre_splined.size(); i++)
         {
@@ -406,9 +414,9 @@ void HuskyFollower::getGoalPoint()
 
     else //
     {
-        index = oldIndex-(cenPoints_updated/STEPSIZE);
-        if (index<0) index = oldIndex;
+        index = oldIndex;
         dist = getDistFromCar(centre_splined[index]); //get dist of old index
+
         //search for new index with least dist to car
         for(int j = index+1; j < centre_splined.size(); j++)
         {
@@ -455,6 +463,7 @@ void HuskyFollower::getGoalPoint()
         
 }
 
+// 
 double HuskyFollower::getSign(double &num)
 {
     if (num < 0)

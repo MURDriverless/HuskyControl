@@ -21,9 +21,9 @@
 #define PI 3.14159265359
 #define LENGTH 2.95                 // length of vehicle (front to rear wheel)
 #define G  9.81                     // gravity
-#define MAX_ACC 11.772              //1.2*G, copied from Dennis
-#define MAX_DECEL -17.658           //-1.8*Gg copied from Dennis
-#define MAX_STEER 0.8               // Copied from Dennis
+#define MAX_ACC 11.772              // 1.2*G, copied from Dennis (MURauto20)
+#define MAX_DECEL -17.658           //-1.8*Gg copied from Dennis (MURauto20)
+#define MAX_STEER 0.8               // Copied from Dennis  (MURauto20)
 #define STEPSIZE 0.1                // spline step size 
 #define SPLINE_N 6                 // number of points to spline
 #define DT 0.05
@@ -50,7 +50,7 @@
 #define PATH_VIZ_TOPIC2 "/mur/follower/path_viz"
 #define FASTLAP_READY_TOPIC "/mur/control/transition"
 
-const bool DEBUG = true;              //to show debug messages in terminal, switch to false to turn off
+bool DEBUG = true;              //to show debug messages in terminal, switch to false to turn off
 
 class HuskyFollower
 {
