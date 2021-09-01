@@ -222,7 +222,7 @@ std::array<OptVariables,N+1> MPC::sqpSolutionUpdate(const std::array<OptVariable
     return updated_solution;
 }
 
-MPCReturn MPC::runMPC(State &x0)
+MPCReturn MPC::runMPC(State &x0, Eigen::Vector2d &error_count)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
     int solver_status = -1;
@@ -243,7 +243,10 @@ MPCReturn MPC::runMPC(State &x0)
         optimal_solution_ = solver_interface_->solveMPC(stages_,x0_normalized, &solver_status);
         optimal_solution_ = deNormalizeSolution(optimal_solution_);
         if(solver_status != 0)
+        {
             n_no_solves_sqp_++;
+            error_count(solver_status-1)++; // unsolvable counts to determine feasibiliy
+        }
         if(solver_status <= 1)
             initial_guess_ = sqpSolutionUpdate(initial_guess_,optimal_solution_);
     }

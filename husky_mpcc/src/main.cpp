@@ -26,6 +26,10 @@ using json = nlohmann::json;
 #include <stack>
 #include <ctime>
 #include <chrono>
+#include <iomanip>
+
+#define STATROW 15
+#define BARWIDTH 30
 
 // Time testing
 std::stack<clock_t> tictoc_stack;
@@ -34,15 +38,54 @@ void tic() {
     tictoc_stack.push(clock());
 }
 
-void toc() {
+double toc() {
     double t = ((double)(clock() - tictoc_stack.top())) / CLOCKS_PER_SEC;
-    std::cout << "Time elapsed: "
-              << t
-              << "s, Hz: "
-              << 1.0/t
-              << std::endl;
+    // std::cout << "Time elapsed: "
+    //           << t
+    //           << "s, Hz: "
+    //           << 1.0/t
+    //           << std::endl;
     tictoc_stack.pop();
+    return t;
 }
+
+// Print Statistics
+void printStatistics(mpcc::State x0, mpcc::ArcLengthSpline track_, double lap_count, double t, Eigen::Vector2d error_count, Eigen::Vector2d wheel_constraint)
+{
+    // Decimals
+    std::cout << std::fixed; 
+    std::cout << std::setprecision(5);
+
+    std::cout << "States:" << std::endl;
+    std::cout << "x: " << x0.X << std::endl;
+    std::cout << "y: " << x0.Y << std::endl;
+    std::cout << "theta: " << x0.th << std::endl;
+    std::cout << "s: " << x0.s << std::endl;
+    std::cout << "v: " << x0.v << std::endl;
+    std::cout << "w: " << x0.w << std::endl;
+    std::cout << "vL: " << x0.v-(0.5*x0.w*0.555) << std::endl;
+    std::cout << "vR: " << x0.v+(0.5*x0.w*0.555) << std::endl;
+    std::cout << "Controller Status: " << std::endl;
+    std::cout << "Solve time: " << t << "s, Hz: " << 1.0/t << std::endl;
+    std::cout << "exitflag1 count: " << error_count(0) << ", exitflag2 count: " << error_count(1) << std::endl;
+    std::cout << "Constraint Violation count: " << wheel_constraint(0) << ", Max Violation: " << wheel_constraint(1) << std::endl;
+
+    std::cout << "track progress: [";
+    int pos = BARWIDTH * x0.s/track_.getLength();
+    for (int i = 0; i < BARWIDTH; ++i) {
+        if (i < pos) std::cout << "=";
+        else if (i == pos) std::cout << ">";
+        else std::cout << " ";
+    }
+    std::cout << "] " << int(x0.s/track_.getLength() * 100.0) << "%, lap: " << int(lap_count);
+    
+    // Set stationary
+    std::cout << "\r";
+    for (int i = 0; i < STATROW; i++)
+        std::cout << "\033[F";
+    std::cout.flush();
+}
+
 
 // Main
 int main(int argc, char **argv) {
@@ -57,6 +100,8 @@ int main(int argc, char **argv) {
     std::ifstream iConfig("/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/config.json");
     json jsonConfig;
     iConfig >> jsonConfig;
+
+    ROS_INFO_STREAM("FAST LAP CONTROL - MPCC - Initialized configuration.");
 
     PathToJson json_paths {jsonConfig["model_path"],
                            jsonConfig["cost_path"],
@@ -84,7 +129,7 @@ int main(int argc, char **argv) {
     bool firstRun = true;
 
     // ROS INFO
-    ROS_INFO_STREAM("FAST LAP CONTROL STARTED.");
+    ROS_INFO_STREAM("FAST LAP CONTROL - MPCC - Initializing MPC.");
 
     // Empty Objects
     MPC mpc(jsonConfig["n_sqp"],jsonConfig["n_reset"],jsonConfig["sqp_mixing"],jsonConfig["Ts"],json_paths);
@@ -97,8 +142,17 @@ int main(int argc, char **argv) {
     // Set Ts
     ros::Rate rate(jsonConfig["Hz"]);
 
-    int count = 0; // For debug
-    int violate = 0; // Constraint testing
+    // Lap count
+    double cur_s = 0;
+    int lap_count = 0;
+
+    // Debug and stats
+    int count = 0; // For debug and simplesim
+    Eigen::Vector2d wheel_violate; // Wheel Constraint Testing, 0 for count, 1 for max
+    double t = 0; // solve time and Hz
+    Eigen::Vector2d error_count; // count exit error 1 and 2
+
+    ROS_INFO_STREAM("FAST LAP CONTROL STARTED.");
 
     while(ros::ok())
     {
@@ -117,18 +171,23 @@ int main(int argc, char **argv) {
                         max_time = log_i.time_total;
                 }
                 // std::cout << "mean nmpc time " << mean_time/double(jsonConfig["n_sim"]) << std::endl;
+                for (int i = 0; i < STATROW+1; i++)
+                    std::cout << std::endl;
                 std::cout << "mean nmpc time " << mean_time/count << std::endl;
                 std::cout << "max nmpc time " << max_time << std::endl;
-                std::cout << "wheel violation count " << violate << std::endl;
+                std::cout << "wheel violation count " << wheel_violate(0) << std::endl;
+                std::cout << "max wheel violation " << wheel_violate(1) << std::endl;
+                std::cout << "exitflag 1 count " << error_count(0) << std::endl;
+                std::cout << "exitflag 2 count " << error_count(1) << std::endl;
                 plotter.plotSim(log,track_xy, track_);
                 return 0;
             }
             else
             {
                 count++;
-                std::cout << "count: " << count << std::endl;
+                // std::cout << "count: " << count << std::endl;
             }
-        } 
+        }
         if (skip) // Want start fast lap immediately
         {
             controlNode.fastlapready = true; 
@@ -157,46 +216,60 @@ int main(int argc, char **argv) {
             
             track_ = mpc.setTrack(track_xy.X,track_xy.Y);
 
-            ROS_INFO("Starting State:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w); 
+            ROS_INFO("Fast Lap Starting State:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w); 
             
-            MPCReturn mpc_sol = mpc.runMPC(x0); // Updates s
-            log.push_back(mpc_sol);
-            x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Updates s and vs
-            controlNode.publishVel(x0.v, x0.w); // Command desired velocity
-            if(comm)
-            {
-                ros::spinOnce();
-                x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all states from SLAMe
-            }
+            cur_s = x0.s;
 
-            if (abs(x0.v-0.5*x0.w*0.555) > 1.001 || abs(x0.v+0.5*x0.w*0.555) > 1.001)
-            {
-                violate++;
-                ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
-            }
+            // Skip for good print statement
+            for (int i = 0; i < STATROW*2; i++)
+                std::cout << std::endl;
+
+            // MPCReturn mpc_sol = mpc.runMPC(x0, error_count); // Updates s
+            // log.push_back(mpc_sol);
+            // x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Updates s and vs
+            // controlNode.publishVel(x0.v, x0.w); // Command desired velocity
+            // if(comm)
+            // {
+            //     ros::spinOnce();
+            //     x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all states from SLAMe
+            // }
+
+            // if (abs(x0.v-0.5*x0.w*0.555) > 1.001 || abs(x0.v+0.5*x0.w*0.555) > 1.001)
+            // {
+            //     wheel_violate(0)++;
+            //     wheel_violate(1) = abs(x0.v-0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v-0.5*x0.w*0.555) : wheel_violate(1);
+            //     wheel_violate(1) = abs(x0.v+0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v+0.5*x0.w*0.555) : wheel_violate(1);
+            //     // ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
+            // }
             
             firstRun = false;
-            controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
+            // controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
 
         }
 
         else if (controlNode.getFastLapReady())     
         {
             ros::spinOnce();
-            ROS_INFO("States:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w);
-            ROS_INFO("Constraint State:\nvL:%lf\nvR:%lf\n", (x0.v-0.5*x0.w*0.555), (x0.v+0.5*x0.w*0.555));
+
+            printStatistics(x0, track_, lap_count, t, error_count, wheel_violate);
+
+            // ROS_INFO("States:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w);
+            // ROS_INFO("Constraint State:\nvL:%lf\nvR:%lf\n", (x0.v-0.5*x0.w*0.555), (x0.v+0.5*x0.w*0.555));
             tic();
-            MPCReturn mpc_sol = mpc.runMPC(x0); // Updates s
-            toc();
+            MPCReturn mpc_sol = mpc.runMPC(x0, error_count); // Updates s
+            t = toc();
             log.push_back(mpc_sol);
 
             x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Update s and vs
             controlNode.publishVel(x0.v, x0.w); // Command desired velocity
 
+            // Get wheel constraints
             if (abs(x0.v-0.5*x0.w*0.555) > 1.001 || abs(x0.v+0.5*x0.w*0.555) > 1.001)
             {
-                violate++;
-                ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
+                wheel_violate(0)++;
+                wheel_violate(1) = abs(x0.v-0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v-0.5*x0.w*0.555) : wheel_violate(1);
+                wheel_violate(1) = abs(x0.v+0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v+0.5*x0.w*0.555) : wheel_violate(1);
+                // ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
             }
 
             if(comm)
@@ -207,7 +280,20 @@ int main(int argc, char **argv) {
             
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
             
-            // TODO: Lap count
+            if(x0.s < cur_s) // Finished a lap, progress resets
+                lap_count++;
+            
+            cur_s = x0.s; // Make new s
+        }
+
+        // Lap Count
+        if (lap_count == 10)
+        {
+            if (x0.s > 1) // Cross a little bit then stop
+            {
+                controlNode.publishVel(0, 0); // Command desired velocity
+                return 0; // Finish race
+            }
         }
 
         if(comm)

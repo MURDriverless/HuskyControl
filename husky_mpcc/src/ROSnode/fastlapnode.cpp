@@ -129,7 +129,7 @@ void FastLapControlNode::publishVel(double lin_vel, double ang_vel)
     vel_msg.linear.x = lin_vel;
     vel_msg.angular.z = ang_vel;
 
-    ROS_INFO("PUBLISHING VELOCITY: %lf, STEER: %lf\n", lin_vel, ang_vel);
+    // ROS_INFO("PUBLISHING VELOCITY: %lf, STEER: %lf\n", lin_vel, ang_vel);
 
     velocityPublisher.publish(vel_msg);
 }

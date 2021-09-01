@@ -74,7 +74,7 @@ struct MPCReturn {
 
 class MPC {
 public:
-    MPCReturn runMPC(State &x0);
+    MPCReturn runMPC(State &x0, Eigen::Vector2d &error_count);
 
     ArcLengthSpline setTrack(const Eigen::VectorXd &X, const Eigen::VectorXd &Y);
 

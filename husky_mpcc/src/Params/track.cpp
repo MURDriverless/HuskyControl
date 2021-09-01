@@ -12,8 +12,8 @@
 // Shift start of track to 0, then increase track size by factor k
 void MultiplyVector(std::vector<double> &v, double k)
 {
-    transform(v.begin(), v.end(), v.begin(), [v,k](double &c){ return (c-v.front())*k; }); // If want to shift start position, e.g. for eufs
-    // transform(v.begin(), v.end(), v.begin(), [v,k](double &c){ return c*k; });
+    // transform(v.begin(), v.end(), v.begin(), [v,k](double &c){ return (c-v.front())*k; }); // If want to shift start position, e.g. for eufs
+    transform(v.begin(), v.end(), v.begin(), [v,k](double &c){ return c*k; });
 }
 
 namespace mpcc{
