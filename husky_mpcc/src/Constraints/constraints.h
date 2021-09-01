@@ -45,8 +45,8 @@ public:
     Constraints(double Ts,const PathToJson &path);
 private:
     OneDConstraint getTrackConstraints(const ArcLengthSpline &track,const State &x) const;
-    OneDConstraint getLeftWheelConstraints(const State &x) const;
-    OneDConstraint getRightWheelConstraints(const State &x) const;
+    OneDConstraint getLeftWheelConstraint(const State &x) const;
+    OneDConstraint getRightWheelConstraint(const State &x) const;
 
     // OneDConstraint getTireConstraintRear(const State &x) const;
     // C_i_MPC getTireConstraintRearJac(const State &x) const;

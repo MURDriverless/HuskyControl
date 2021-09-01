@@ -55,7 +55,7 @@ OneDConstraint Constraints::getTrackConstraints(const ArcLengthSpline &track,con
 // Actual Husky Dynamics may result in maximum wheel velocity of 1m/s,
 // which is not accounted for in unicycle model, allowing it to command
 // 1m/s linear velocity and some amount of angular velocity
-OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
+OneDConstraint Constraints::getLeftWheelConstraint(const State &x) const
 {
     const StateVector x_vec = stateToVector(x);
 
@@ -75,9 +75,8 @@ OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
     C_vL_constraint(si_index.v) = 1; // Partial derivative to v
     C_vL_constraint(si_index.w) = -0.5*param_.husky_track; // Partial derivative to w
 
-    // Bound from bounds.json
-    // const double vL_constraint_lower = bounds_.lower_state_bounds.v_l;
-    // const double vL_constraint_upper = bounds_.upper_state_bounds.v_u;
+    // if (vL > 1.001)
+    //     std::cout << "v:" << v << ", w:" << w << ", vL: " << vL << std::endl;
 
     const double vL_constraint_lower = bounds_.lower_state_bounds.v_l - vL + C_vL_constraint*x_vec;
     const double vL_constraint_upper = bounds_.upper_state_bounds.v_u - vL + C_vL_constraint*x_vec;
@@ -88,7 +87,7 @@ OneDConstraint Constraints::getLeftWheelConstraints(const State &x) const
 // Actual Husky Dynamics may result in maximum wheel velocity of 1m/s,
 // which is not accounted for in unicycle model, allowing it to command
 // 1m/s linear velocity and some amount of angular velocity
-OneDConstraint Constraints::getRightWheelConstraints(const State &x) const
+OneDConstraint Constraints::getRightWheelConstraint(const State &x) const
 {
     const StateVector x_vec = stateToVector(x);
 
@@ -108,9 +107,8 @@ OneDConstraint Constraints::getRightWheelConstraints(const State &x) const
     C_vR_constraint(si_index.v) = 1; // Partial derivative to v
     C_vR_constraint(si_index.w) = 0.5*param_.husky_track; // Partial derivative to w
 
-    // compute the bounds given the Tylor series expansion
-    // const double alpha_constraint_lower = -param_.max_alpha-alpha_f+C_alpha_constraint*x_vec;
-    // const double alpha_constraint_upper =  param_.max_alpha-alpha_f+C_alpha_constraint*x_vec;
+    // if (vR > 1.001)
+    //     std::cout << "v:" << v << ", w:" << w << ", vR: " << vR << std::endl;
 
     // Bound from bounds.json
     const double vR_constraint_lower = bounds_.lower_state_bounds.v_l - vR + C_vR_constraint*x_vec;
@@ -124,8 +122,8 @@ ConstrainsMatrix Constraints::getConstraints(const ArcLengthSpline &track,const 
     // compute all the polytopic state constraints
     ConstrainsMatrix constrains_matrix;
     const OneDConstraint track_constraints = getTrackConstraints(track,x);
-    const OneDConstraint leftwheel_constraints = getLeftWheelConstraints(x);
-    const OneDConstraint rightwheel_constraints = getLeftWheelConstraints(x);
+    const OneDConstraint leftwheel_constraints = getLeftWheelConstraint(x);
+    const OneDConstraint rightwheel_constraints = getRightWheelConstraint(x);
 
     C_MPC C_constrains_matrix;
     d_MPC dl_constrains_matrix;

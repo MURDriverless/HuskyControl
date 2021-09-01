@@ -28,8 +28,9 @@ using json = nlohmann::json;
 #include <chrono>
 #include <iomanip>
 
-#define STATROW 15
+#define STATROW 13
 #define BARWIDTH 30
+#define NUMLAP 10
 
 // Time testing
 std::stack<clock_t> tictoc_stack;
@@ -50,7 +51,8 @@ double toc() {
 }
 
 // Print Statistics
-void printStatistics(mpcc::State x0, mpcc::ArcLengthSpline track_, double lap_count, double t, Eigen::Vector2d error_count, Eigen::Vector2d wheel_constraint)
+void printStatistics(mpcc::State x0, Eigen::Vector4d command, mpcc::ArcLengthSpline track_, 
+    double lap_count, double t, Eigen::Vector2d error_count, Eigen::Vector2d wheel_constraint)
 {
     // Decimals
     std::cout << std::fixed; 
@@ -61,23 +63,23 @@ void printStatistics(mpcc::State x0, mpcc::ArcLengthSpline track_, double lap_co
     std::cout << "y: " << x0.Y << std::endl;
     std::cout << "theta: " << x0.th << std::endl;
     std::cout << "s: " << x0.s << std::endl;
-    std::cout << "v: " << x0.v << std::endl;
-    std::cout << "w: " << x0.w << std::endl;
-    std::cout << "vL: " << x0.v-(0.5*x0.w*0.555) << std::endl;
-    std::cout << "vR: " << x0.v+(0.5*x0.w*0.555) << std::endl;
+    std::cout << "v: " << command(0) << std::endl;
+    std::cout << "w: " << command(1) << std::endl;
+    std::cout << "vL: " << command(2) << std::endl;
+    std::cout << "vR: " << command(3) << std::endl;
     std::cout << "Controller Status: " << std::endl;
     std::cout << "Solve time: " << t << "s, Hz: " << 1.0/t << std::endl;
-    std::cout << "exitflag1 count: " << error_count(0) << ", exitflag2 count: " << error_count(1) << std::endl;
-    std::cout << "Constraint Violation count: " << wheel_constraint(0) << ", Max Violation: " << wheel_constraint(1) << std::endl;
+    std::cout << "exitflag1 count: " << int(error_count(0)) << ", exitflag2 count: " << int(error_count(1)) << std::endl;
+    std::cout << "Constraint Violation count: " << int(wheel_constraint(0)) << ", Max Violation: " << wheel_constraint(1) << std::endl;
 
-    std::cout << "track progress: [";
+    std::cout << "lap " << int(lap_count) << " progress: [";
     int pos = BARWIDTH * x0.s/track_.getLength();
     for (int i = 0; i < BARWIDTH; ++i) {
         if (i < pos) std::cout << "=";
         else if (i == pos) std::cout << ">";
         else std::cout << " ";
     }
-    std::cout << "] " << int(x0.s/track_.getLength() * 100.0) << "%, lap: " << int(lap_count);
+    std::cout << "] " << int(x0.s/track_.getLength() * 100.0) << "%   ";
     
     // Set stationary
     std::cout << "\r";
@@ -156,6 +158,16 @@ int main(int argc, char **argv) {
 
     while(ros::ok())
     {
+        // Lap Count
+        if (lap_count == NUMLAP)
+        {
+            if (x0.s > 1) // Cross a little bit then stop
+            {
+                controlNode.publishVel(0, 0); // Command desired velocity
+                return 0; // Finish race
+            }
+        }
+
         if (!comm) // Simple sim test without Gazebo/RVIZ
         {
             if (count > jsonConfig["n_sim"])
@@ -218,41 +230,12 @@ int main(int argc, char **argv) {
 
             ROS_INFO("Fast Lap Starting State:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w); 
             
-            cur_s = x0.s;
-
-            // Skip for good print statement
-            for (int i = 0; i < STATROW*2; i++)
-                std::cout << std::endl;
-
-            // MPCReturn mpc_sol = mpc.runMPC(x0, error_count); // Updates s
-            // log.push_back(mpc_sol);
-            // x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Updates s and vs
-            // controlNode.publishVel(x0.v, x0.w); // Command desired velocity
-            // if(comm)
-            // {
-            //     ros::spinOnce();
-            //     x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all states from SLAMe
-            // }
-
-            // if (abs(x0.v-0.5*x0.w*0.555) > 1.001 || abs(x0.v+0.5*x0.w*0.555) > 1.001)
-            // {
-            //     wheel_violate(0)++;
-            //     wheel_violate(1) = abs(x0.v-0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v-0.5*x0.w*0.555) : wheel_violate(1);
-            //     wheel_violate(1) = abs(x0.v+0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v+0.5*x0.w*0.555) : wheel_violate(1);
-            //     // ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
-            // }
-            
             firstRun = false;
-            // controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
-
+            count = 0;
         }
 
         else if (controlNode.getFastLapReady())     
         {
-            ros::spinOnce();
-
-            printStatistics(x0, track_, lap_count, t, error_count, wheel_violate);
-
             // ROS_INFO("States:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w);
             // ROS_INFO("Constraint State:\nvL:%lf\nvR:%lf\n", (x0.v-0.5*x0.w*0.555), (x0.v+0.5*x0.w*0.555));
             tic();
@@ -263,37 +246,42 @@ int main(int argc, char **argv) {
             x0 = integrator.simTimeStep(x0,mpc_sol.u0,jsonConfig["Ts"]); // Update s and vs
             controlNode.publishVel(x0.v, x0.w); // Command desired velocity
 
-            // Get wheel constraints
-            if (abs(x0.v-0.5*x0.w*0.555) > 1.001 || abs(x0.v+0.5*x0.w*0.555) > 1.001)
+            // Save command
+            double vL = x0.v-0.5*x0.w*0.555;
+            double vR = x0.v+0.5*x0.w*0.555;
+            Eigen::Vector4d command(x0.v, x0.w, vL, vR);
+
+            // Check if command satisfy wheel constraints
+            if (abs(vL) > 1.001 || abs(vR) > 1.001)
             {
                 wheel_violate(0)++;
-                wheel_violate(1) = abs(x0.v-0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v-0.5*x0.w*0.555) : wheel_violate(1);
-                wheel_violate(1) = abs(x0.v+0.5*x0.w*0.555) > wheel_violate(1) ? abs(x0.v+0.5*x0.w*0.555) : wheel_violate(1);
+                wheel_violate(1) = abs(vL) > wheel_violate(1) ? abs(vL) : wheel_violate(1);
+                wheel_violate(1) = abs(vR) > wheel_violate(1) ? abs(vR) : wheel_violate(1);
                 // ROS_INFO_STREAM("VIOLATED WHEEL VEL CONSTRAINT: " << violate);
             }
-
+            
+            // Update States from SLAM
             if(comm)
             {
                 ros::spinOnce();
                 x0 = controlNode.update(x0, mpc_sol.u0, jsonConfig["Ts"]); // Update all state with SLAM data 
             }
+
+            // Print stats
+            if (++count > (double)jsonConfig["Hz"]) // after 1s for clean print
+            {
+                printStatistics(x0, command, track_, lap_count, t, error_count, wheel_violate);
+            }
             
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
-            
-            if(x0.s < cur_s) // Finished a lap, progress resets
-                lap_count++;
-            
-            cur_s = x0.s; // Make new s
-        }
 
-        // Lap Count
-        if (lap_count == 10)
-        {
-            if (x0.s > 1) // Cross a little bit then stop
+            if(x0.s < cur_s) // Finished a lap, progress resets
             {
-                controlNode.publishVel(0, 0); // Command desired velocity
-                return 0; // Finish race
+                lap_count++;
+                cur_s = 0;
             }
+            else
+                cur_s = x0.s; // Save new progress
         }
 
         if(comm)
