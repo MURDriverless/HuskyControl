@@ -54,11 +54,6 @@ void HuskyFollower::spin()
     publishCtrl();
     pushPathViz();
     clearVars();
-
-    //needs at least 2 path points
-    if (centre_points.size()<2) reinitialise = true;
-    // std::cout<<"[FOLLOWER] current car pos: ("<<car_x<<", "<<car_y<<")  ";
-    // std::cout<<"vel: "<<lin_velocity<<"ang_vel: "<<ang_velocity<<std::endl;
     ros::Rate(HZ).sleep();
 }
 
@@ -102,13 +97,13 @@ void HuskyFollower::transitionCallback(const mur_common::transition_msg &msg)
 void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
 {
     
-    if (reinitialise)
+    if (!initialised)
     {
        initX = msg.pose.pose.position.x;
        initY = msg.pose.pose.position.y;
        initYaw = car_yaw;
-       reinitialise = false;
-       currentGoalPoint.updatePoint(centre_points.front());
+       initialised = true;
+       currentGoalPoint.updatePoint(centre_points.back());
     }
     car_x = msg.pose.pose.position.x;
     car_y = msg.pose.pose.position.y;
@@ -134,18 +129,20 @@ void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
 //get path msgs from path planner
 void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
 {   
+    // if the last 5 path points have changed, copy new path points
     int j =0;
     for (int i=centre_points.size()-1; i>=0 ;i--)
     {
-        if (calcDist(centre_points[i],PathPoint(msg.x.back(),msg.y.back()))>0.1)
+        if (calcDist(centre_points[i],PathPoint(msg.x.back(),msg.y.back()))>0.01)
         {
             new_centre_points = true;
             break;
         }
-        if (j>3) break;
+        if (j>5) break;
         j++;
     }
     
+    //copy path points msg
     if (centre_points.empty() || new_centre_points)
     {
         centre_points.clear();
@@ -157,7 +154,7 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
     }
 
     //check if lap is complete
-    if (calcDist(centre_points.front(),centre_splined.back())<0.02)
+    if (calcDist(PathPoint(initX,initY),centre_splined.back())<0.02)
         plannerComplete = true;
 
     path_msg_received = true;
@@ -305,18 +302,22 @@ void HuskyFollower::generateSplines()
   
     
     //there must be at least 3 points for cubic spline to work
-    if (centre_points.size() == 2) //if only 2, make a line
+    if (centre_points.size() <= 2) //if less than = 2, make a line
     {
-        double tempX, tempY;
-        for (auto p:centre_points)
+        
+        double tempX, tempY, slopeY,slopeX;
+        if (centre_points.size() == 1)
         {
-            xp.push_back(p.x);
-            yp.push_back(p.y);
+            slopeY = (yp.back() - initY) / STEPSIZE;
+            slopeX = (xp.back() - initX) / STEPSIZE;
+        }
+        else
+        {
+            slopeY = (yp.back() - yp.front()) / STEPSIZE;
+            slopeX = (xp.back() - xp.front()) / STEPSIZE;
         }
 
-        double slopeY = (yp.back() - yp.front()) / STEPSIZE;
-        double slopeX = (xp.back() - xp.front()) / STEPSIZE;
-        for (double i = 0; i<=xp.size(); i+= STEPSIZE)
+        for (double i = 0; i<=2; i+= STEPSIZE)
         {
             tempY = slopeY * i;
             tempX = slopeX * i;

@@ -83,10 +83,10 @@ private:
     double car_lin_v;                    // car linear velocity
     double car_ang_v;                    // car angulr velocity (for Husky only)
     double car_yaw;                      // car yaw in Euler angle
-    double initX = 0;
-    double initY = 0;
-    double initYaw = 0;
-    bool reinitialise = false;
+    double initX = 0;                    // initial pos x
+    double initY = 0;                    // initial pos y
+    double initYaw = 0;                  // initial yaw
+    bool initialised = false;
 
     bool odom_msg_received = false;
     bool new_centre_points = false;

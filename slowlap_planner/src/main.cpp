@@ -49,9 +49,7 @@ int main(int argc, char **argv)
         if (planner.fastLapReady)
             break;
 	}
-    
-    // planner.shut_down();
-// 
+
     }
     return 0;
 }

@@ -36,7 +36,7 @@ void ConesPublisher::spin()
 {
     waitForMsgs();
     detectCones();
-    // makeUncertain(); //uncomment this to simulate uncertainty
+    makeUncertain(); //uncomment this to simulate uncertainty
     publishCones();
     // if (trueCones_msg_received) std::cout<<"cones received! cones size: "<<true_cones.size()<<std::endl;
     // if (true_cones.size() > 5 && (true_cones.size() == seen_cones.size()))
@@ -118,14 +118,16 @@ void ConesPublisher::trueConesCallback(const mur_common::cone_msg &msg)
             {
                 true_cones.back().position.x -= -13.0;
                 true_cones.back().position.y -= 10.3;
-            // }
-            // true_cones.back().position.x -= -2.5;
-            // true_cones.back().position.y -= 0;
             }
-        trueCones_msg_received = true;
+            // true_cones.back().position.x -= -14.5;
+            // true_cones.back().position.y -= 0;
         }
+        
+    trueCones_msg_received = true;
     }
+
 }
+
 
 void ConesPublisher::publishCones()
 {
@@ -278,7 +280,7 @@ void ConesPublisher::detectCones()
 }
 void ConesPublisher::makeUncertain()
 {
-    // varying seen cone pos to simulate uncertainty
+        // varying seen cone pos to simulate uncertainty
     float randNum;
     float dist;
     for (auto &con:seen_cones)
@@ -309,7 +311,7 @@ int main(int argc, char **argv)
     //Initialize Husky Object
     
     ConesPublisher conesPub(n);
-    //ros::Rate freq(20);
+        //ros::Rate freq(20);
 	
 	while (ros::ok())
     {

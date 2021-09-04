@@ -19,12 +19,12 @@
 #include "cone.h"
 #include "path_point.h"
 
-#define TRACKWIDTH 4.5
+#define TRACKWIDTH 4
 #define MAX_PATH_ANGLE1 80      // angle constrain for the path point formed
 #define MAX_PATH_ANGLE2 280     // angle constrain for the path point formed
-#define MAX_POINT_DIST 8        // distance constrain for path point formed
+#define MAX_POINT_DIST 10        // distance constrain for path point formed
 #define MIN_POINT_DIST 0.5      // distance constrain for path point formed
-#define CERTAIN_RANGE 4         // if cone is within this range, cone positions are certain and no longer updated
+#define CERTAIN_RANGE 5         // if cone is within this range, cone positions are certain and no longer updated
 
 
 const bool DEBUG = true;        //  to show debug messages, switch to false to turn off
@@ -35,7 +35,6 @@ public:
     PathPlanner(float, float, std::vector<Cone>&, bool, float, float, float, std::vector<PathPoint>&);
     void update(std::vector<Cone>&, const float, const float, std::vector<float>&, std::vector<float>&,
                 std::vector<float>&,std::vector<Cone> &,std::vector<Cone> &,std::vector<PathPoint>&, bool&);
-    void shutdown();
     bool complete = false;
 
 private:
@@ -46,17 +45,17 @@ private:
     std::vector<Cone*> left_cones;		    // Cones on left-side of track (sorted)
     std::vector<Cone*> right_cones;		    // Cones on right-side of track (sorted)
     std::vector<Cone*> timing_cones;        // pointer to Orange cones		
-    std::vector<Cone*> l_cones_to_add;      // pointer to left cones (unsorted)
-    std::vector<Cone*> r_cones_to_add;      // pointer to right cones (unsorted)
+    std::vector<Cone*> left_unsorted;      // pointer to left cones (unsorted)
+    std::vector<Cone*> right_unsorted;      // pointer to right cones (unsorted)
     std::vector<Cone*> thisSide_cone;       // (temporary var) pointer to cones on one side, used for cone sorting and generating path points
     std::vector<Cone*> oppSide_cone;        // (temporary var) pointer to opposite side cones, used for cone sorting and generating path points
     std::vector<Cone*> oppSide_cone2;       // (temporary var) poiner to opposite cone, used for cone sorting and generating path points
-    std::vector<int> addedIDLeft;           // left Cone IDs 
-    std::vector<int> addedIDRight;          // right Cone IDs
-    std::vector<int> addedIDRed;            // orange cone IDs
-
+    
     PathPoint car_pos;              // current car position
+    PathPoint init_pos;             // initial position of car
+    PathPoint startFinish;          // mid point of star/finish line(orange cones)
     bool timingCalc = false;        // flag when orange cones have given a path point
+    bool needToSort = false;
     bool newConesToSort = false;    // flag when there are new cones to be sorted
     bool newConesSorted = false;    // flag when cones are sorted
     bool timingEmpty = true;        // flag when no range cones have been seen
@@ -106,9 +105,8 @@ private:
     float computeCost2(Cone* &cn1, std::vector<Cone*> &oppCone1,std::vector<Cone*> &oppCone2);
     float computeCost3(Cone* &cn1, std::vector<Cone*> &cn2);
     static bool compareConeCost(Cone* const&, Cone* const&);
+    static bool comparePointDist(PathPoint& pt1, PathPoint& pt2);
     void sortAndPushCone(std::vector<Cone*> &cn);
-
-
 
 };
 

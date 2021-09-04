@@ -23,9 +23,8 @@
 #define CONE_TOPIC "/mur/slam/cones"
 #define RVIZ_CONES "cone_markers_sim"
 
-#define SENSOR_RANGE 8
-#define CERTAIN_RANGE 4
-
+#define SENSOR_RANGE 10
+#define CERTAIN_RANGE 5.5
 #define HZ 10
 
 const bool DEBUG = false;              //to show debug messages in terminal, switch to false to turn off

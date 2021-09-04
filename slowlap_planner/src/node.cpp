@@ -13,6 +13,14 @@
 PlannerNode::PlannerNode(ros::NodeHandle n, bool const_velocity, float v_max, float v_const, float max_f_gain)
     : nh(n), const_velocity(const_velocity), v_max(v_max), v_const(v_const), max_f_gain(max_f_gain)
 {
+    X.reserve(300);
+    Y.reserve(300);
+    V.reserve(300);
+    Left.reserve(200);
+    Right.reserve(200);
+    cones.reserve(500);
+    Markers.reserve(1000); 
+    
     times.reserve(std::numeric_limits<uint16_t>::max());    // diagnostic stuff (MURauto20)
     rtimes.reserve(std::numeric_limits<uint16_t>::max());   // diagnostic stuff (MURauto20)
     
@@ -23,14 +31,26 @@ PlannerNode::PlannerNode(ros::NodeHandle n, bool const_velocity, float v_max, fl
     now = ros::Time::now();
 }
 
-// initialises planner (path_planner.cpp), waits for cones to be received
+// initialises planner (path_planner.cpp), waits for cones to be received (especially orange cones)
 void PlannerNode::initialisePlanner()
 {
     if (cone_msg_received)
     {
-        this->planner = std::unique_ptr<PathPlanner>(new PathPlanner(car_x, car_y, cones, const_velocity, v_max, v_const, max_f_gain, Markers));
-        ROS_INFO_STREAM("[PLANNER] Planner initialized");
-        plannerInitialised = true;
+        int countRed = 0;
+        for (auto &cn: cones)
+        {
+            if (cn.colour == 'r')
+                countRed++;
+        }
+        if (countRed>1)
+        {
+            this->planner = std::unique_ptr<PathPlanner>(new PathPlanner(car_x, car_y, cones, const_velocity, v_max, v_const, max_f_gain, Markers));
+            ROS_INFO_STREAM("[PLANNER] Planner initialized");
+            plannerInitialised = true;
+        }
+        else
+            std::cout<<"Timing cones (orange) not yet found"<<std::endl;
+
     }
     else
         std::cout<<"No cones received yet"<<std::endl;
@@ -292,6 +312,7 @@ void PlannerNode::pushMarkers()
 }
 
 // marker properties
+// google Visualisation::Markers message for more details
 void PlannerNode::setMarkerProperties(visualization_msgs::Marker *marker,PathPoint cone1,PathPoint cone2,int n,bool accepted)
 {
     marker->header.frame_id = "odom";
@@ -301,7 +322,7 @@ void PlannerNode::setMarkerProperties(visualization_msgs::Marker *marker,PathPoi
     marker->id = n;
     marker->type = visualization_msgs::Marker::LINE_LIST;
     marker->action = visualization_msgs::Marker::ADD;
-    marker->lifetime = ros::Duration(0);
+    marker->lifetime = ros::Duration(1);
     geometry_msgs::Point p1, p2;
 
 
@@ -324,6 +345,7 @@ void PlannerNode::setMarkerProperties(visualization_msgs::Marker *marker,PathPoi
     marker->scale.z = 0.7;
 
     // alpha and RGB settings
+    // color.a is opacity, 0: invisible
     marker->color.a = 0.5;
 
     if (accepted)
@@ -334,9 +356,9 @@ void PlannerNode::setMarkerProperties(visualization_msgs::Marker *marker,PathPoi
     }
     else
     {
-        marker->color.a = 0.1;
-        marker->color.r = 0.0;
-        marker->color.g = 0.4;
+        marker->color.a = 1.0;
+        marker->color.r = 0.50;
+        marker->color.g = 0.1;
         marker->color.b = 1.0;
         marker->lifetime = ros::Duration(0.1);
     }
