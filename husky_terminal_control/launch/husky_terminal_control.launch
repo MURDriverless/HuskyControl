@@ -10,8 +10,8 @@
   
 	<arg name="vel" default="1.0"/>
 	<arg name="ang" default="30.0"/>
-    <arg name="lingain" default="0.5"/> 
-    <arg name="anggain" default="1.0"/>
+    <arg name="lingain" default="2.0"/> 
+    <arg name="anggain" default="5.0"/>
 
     <!--############## Husky Gazebo ##############-->
     <group if="$(arg gazebo)">
