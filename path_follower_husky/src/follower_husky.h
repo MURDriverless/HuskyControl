@@ -50,7 +50,7 @@
 #define PATH_VIZ_TOPIC2 "/mur/follower/path_viz"
 #define FASTLAP_READY_TOPIC "/mur/control/transition"
 
-bool DEBUG = true;              //to show debug messages in terminal, switch to false to turn off
+bool DEBUG = false;              //to show debug messages in terminal, switch to false to turn off
 
 class HuskyFollower
 {

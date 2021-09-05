@@ -121,6 +121,7 @@ private:
     std::vector<Cone> cones;            // raw cones
     std::vector<PathPoint> Markers;     // rviz
     
+    PathPoint startFin;                 // start/finishline midpoint
     float car_x;                        // car current pos x
     float car_y;                        // car current pos y
     float car_v;                        // car current v

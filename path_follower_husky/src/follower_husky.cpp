@@ -306,10 +306,16 @@ void HuskyFollower::generateSplines()
     {
         
         double tempX, tempY, slopeY,slopeX;
+        for (auto &p:centre_points)
+        {
+            xp.push_back(p.x);
+            yp.push_back(p.y);
+        }
         if (centre_points.size() == 1)
         {
-            slopeY = (yp.back() - initY) / STEPSIZE;
-            slopeX = (xp.back() - initX) / STEPSIZE;
+            std::cout<<"11111";
+            slopeY = (yp.back() ) / STEPSIZE;
+            slopeX = (xp.back() ) / STEPSIZE;
         }
         else
         {
@@ -452,7 +458,8 @@ void HuskyFollower::getGoalPoint()
     
     if (index == centre_splined.size()-1) //if at last index of centre_splined path
     {
-        endOfPath = true;
+        if (centre_splined.size()>(5/STEPSIZE))
+            endOfPath = true;
         currentGoalPoint.updatePoint(centre_splined.back());
         if (DEBUG) std::cout<<"[FOLLOWER] car near end of path" <<std::endl;
     }

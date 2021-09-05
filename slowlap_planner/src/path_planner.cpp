@@ -35,8 +35,9 @@ PathPlanner::PathPlanner(float car_x, float car_y, std::vector<Cone> &cones, boo
 	sortConesByDist(init_pos);						// sort first seen cones by distance
 	addCentrePoints();								// add centre points from sorted cones
 	centralizeTimingCones();						// get mid point of orange cones
+	if (timingCalc)
+		sortPathPoints();
 	resetTempConeVectors();							// Clear pointers and reset l/right_unsorted
-	
 	if (DEBUG) std::cout << "[PLANNER] initial path points size : " << centre_points.size() <<std::endl; //this should give 3 under normal circumstances
 }
 
@@ -67,7 +68,7 @@ void PathPlanner::update(std::vector<Cone> &new_cones, const float car_x, const 
 		}
 		else
 		{
-			if (calcDist(init_pos, car_pos) > 10) //if greater than 20m away
+			if (calcDist(init_pos, car_pos) > 15) //if greater than 15m away
 				left_start_zone = true;
 		}
 		
@@ -87,11 +88,10 @@ void PathPlanner::update(std::vector<Cone> &new_cones, const float car_x, const 
 					sortAndPushCone(right_unsorted);	
 					addCentrePoints();
 				}
-				if (!timingCalc) // if orange cones not yet passedBy
+				if (!timingCalc && !left_start_zone) // if orange cones not yet passedBy
 				{
 					centralizeTimingCones();
-					// getDist(centre_points);
-					// sort(centre_points.begin(), centre_points.end(), comparePointDist);
+					sortPathPoints();
 				}
 			}
 		}
@@ -101,15 +101,24 @@ void PathPlanner::update(std::vector<Cone> &new_cones, const float car_x, const 
 		resetTempConeVectors();
 	}
 }
+void PathPlanner::sortPathPoints()
+{
+	for (auto &p:centre_points)
+	{
+		p.dist = calcDist(p,init_pos);
+	}
+	sort(centre_points.begin(),centre_points.end(),comparePointDist);
+}
 
 // checks whether track is (almost) finished
 bool PathPlanner::joinFeasible(const float &car_x, const float &car_y)
 {
 	float dist = calcDist(centre_points.back(), init_pos);
-	if (DEBUG) std::cout<<"[PLANNER] Distance of latest path point to finish line: "<<dist+6<<std::endl; //start/finish line is 6m in fron to init (rules)
-	if ( (dist) < 2 || (calcDist(car_pos,timing_cones.front()->position)<CERTAIN_RANGE)) //if less than 2 meters 
+	if (DEBUG) std::cout<<"[PLANNER] Distance of latest path point to finish line: "<<(dist+6)<<std::endl; //start/finish line is 6m in fron to init (rules)
+	if ( (dist) < 5 || (calcDist(car_pos,left_cones.front()->position)<CERTAIN_RANGE)) //if less than 2 meters 
 	{
-		float angle = calcAngle(*(centre_points.end() - 2), centre_points.back(), centre_points.front());
+		float angle = calcRelativeAngle(centre_points.front(), centre_points.back()) - calcRelativeAngle(centre_points.back(), *(centre_points.end() - 2));
+		// float angle = calcAngle(*(centre_points.end() - 2), centre_points.back(), centre_points.front());
 		std::cout << angle << std::endl;
 		if (abs(angle) < MAX_PATH_ANGLE1 || abs(angle)> MAX_PATH_ANGLE2)
 		{
@@ -206,14 +215,28 @@ PathPoint PathPlanner::generateCentrePoint(Cone* cone_one, Cone* cone_two, bool&
 	
 
 	// calc the distance to the latest path point
-	float dist_back = calcDist(centre_points.back(), midpoint);
+	float dist_back1 = calcDist(centre_points.back(), midpoint);
+	float dist_back2 = calcDist(*(centre_points.end()-2), midpoint);
+
+	// if new path point is closer to the 2nd to the last centre point: wrong direction
+	if(dist_back2<dist_back1)
+	{
+		if (DEBUG) std::cout << "[XX] Rejected point: (" << midpoint.x << ", " << midpoint.y << ")  wrong direction!"<<std::endl;
+		midpoint.cone1 = cone_one;
+		midpoint.cone2 = cone_two;
+		rejected_points.push_back(midpoint);
+		feasible = false;
+		return midpoint;
+	}
+
+
 	//calc the angle difference
 	float angle1 = calcRelativeAngle(centre_points.back(),midpoint); 
 	float angle2 = calcRelativeAngle(*(centre_points.end()-2),centre_points.back());
 	float angle = angle1 - angle2; //same as calcAngle(...)
 	
 	
-	if ((abs(angle)<MAX_PATH_ANGLE1 ||abs(angle)>MAX_PATH_ANGLE2) && (dist_back>MIN_POINT_DIST) && (dist_back<MAX_POINT_DIST))
+	if ((abs(angle)<MAX_PATH_ANGLE1 ||abs(angle)>MAX_PATH_ANGLE2) && (dist_back1>MIN_POINT_DIST) && (dist_back1<MAX_POINT_DIST))
 	{
 		// if (DEBUG) std::cout << "Accepted path point: (" << midpoint.x << ", " << midpoint.y << ") ";
 		// if (DEBUG) std::cout << "dist and angle: " << dist_back << " " << angle << std::endl;
@@ -229,7 +252,7 @@ PathPoint PathPlanner::generateCentrePoint(Cone* cone_one, Cone* cone_two, bool&
 			std::cout << "[XX] Rejected point: (" << midpoint.x << ", " << midpoint.y << ") ";
 			std::cout<<"previous points: ("<<centre_points.back().x<<", "<<centre_points.back().y<<")";
 			std::cout<<" ("<<(*(centre_points.end()-2)).x<<", "<<(*(centre_points.end()-2)).y<<")";
-			std::cout << " dist and angle: " << dist_back << " " << angle1<<" - "<<angle2 <<std::endl;
+			std::cout << " dist and angle: " << dist_back1 << " " << angle1<<" - "<<angle2 <<std::endl;
 		}
 		feasible = false;
 
@@ -416,21 +439,6 @@ void PathPlanner::updateStoredCones(std::vector<Cone>&new_cones)
 		}
 	}
 
-	//update timing cones
-	if (timing_cones.size()>0)
-	{
-		for(int i = timing_cones.size()-1; i>=0; i--)
-		{
-			if (!timing_cones[i]->passedBy)
-				{
-					timing_cones.pop_back();
-				}
-			else
-				{
-					break;
-				}
-		}
-	}
 	
 }
 
@@ -466,8 +474,12 @@ void PathPlanner::updateCentrePoints()
 		// pop path points if their cones havent been passed by yet
 		for (int i = centre_points.size()-1;i>=0;i--)
 		{
-			
-			if(!centre_points[i].cone1->passedBy)
+			if(centre_points[i].cone1 == NULL) //for orange cones 
+			{
+				centre_points.pop_back();
+				timingCalc = false;
+			}
+			else if(!centre_points[i].cone1->passedBy)
 			{
 				centre_points.back().cone1->paired --;
 				centre_points.back().cone2->paired --;
@@ -521,10 +533,11 @@ void PathPlanner::centralizeTimingCones()
 	if  (dist < TRACKWIDTH && abs(angle)<20)
 	{
 		startFinish = avg_point;
-		if (DEBUG) std::cout << "Average timing cones position calculated" <<std::endl;
+		if (DEBUG) std::cout << "Average timing cones position calculated  ";
+		if (DEBUG) std::cout << "dist: "<<dist<<" angle: "<<angle<<std::endl;
 		timingCalc = true;
-		startFinish.cone1 = timing_cones.front();
-		startFinish.cone2 = timing_cones.back();
+		// startFinish.cone1 = timing_cones.front();
+		// startFinish.cone2 = timing_cones.back();
 
 	}
 	else

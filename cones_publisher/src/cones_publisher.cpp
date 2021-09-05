@@ -240,17 +240,6 @@ double ConesPublisher::getAngleFromCar(PathPoint& pnt)
 void ConesPublisher::detectCones()
 {
     double dist,angle;
-    // for (int i= index; i<true_cones.size(); i++)
-    // {
-    //     dist = getDistFromCar(true_cones[i].position);
-    //     if (dist <= SENSOR_RANGE)
-    //         seen_cones.push_back(true_cones[i]);
-    //     else
-    //     {
-    //         index = i;
-    //         break;
-    //     }
-    // }
 
     for (int i= 0; i<true_cones.size(); i++)
     {
