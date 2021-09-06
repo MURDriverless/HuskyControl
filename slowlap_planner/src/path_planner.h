@@ -107,6 +107,7 @@ private:
     static bool compareConeCost(Cone* const&, Cone* const&);
     static bool comparePointDist(PathPoint& pt1, PathPoint& pt2);
     void sortAndPushCone(std::vector<Cone*> &cn);
+    void sortPathPoints();
 
 };
 
