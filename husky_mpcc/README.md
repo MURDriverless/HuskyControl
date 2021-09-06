@@ -32,7 +32,7 @@ A simple unicycle model is used in this version
 2. Install [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
 3. Clone this package, then build it with `catkin build`
 4. Please set `<distro>` as your ROS distro version, e.g. melodic, before running `sudo cp ToMove/husky_eufs.launch /opt/ros/<distro>/share/husky_gazebo/launch`.
-5. Husky Sim can probably directly load models and world from mursim package, not sure how, so we'll do a bit of moving stuff around.
+5. Husky Sim can probably directly load models and world from mursim package, not sure how, so we'll do a bit of moving stuff around. For step 6 to 8, you may need `sudo chown -R user:group directory` to own the directories from ROOT. Replace user:group with your Linux user:group, directory as the folder that contains the file you need to modify.
 6. Add the following lines to `/opt/ros/<distro>/share/husky_gazebo/package.xml` if they are not there
 ```
   <exec_depend>gazebo_ros</exec_depend>
@@ -41,8 +41,8 @@ A simple unicycle model is used in this version
     <gazebo_ros gazebo_model_path="${prefix}/models"/>
   </export>
 ```
-7. From [mursim package](https://github.com/MURDriverless/mursim), move `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
-8. From [mursim package](https://github.com/MURDriverless/mursim), move `eufs_track.world` from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
+7. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
+8. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
 9. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch` and it'll launch the Husky running in eufs_track.
 
 ### Issues with package building
