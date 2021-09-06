@@ -457,8 +457,8 @@ void TerminalControlHusky::testSqMoveTime(double side)
         ros::spinOnce();
         ROS_INFO("Current x: %lf, y:%lf, phi:%lf\n", this->x, this->y, this->phi);
 
-        dest_x = this->x + std::cos(this->phi);
-        dest_y = this->y + std::sin(this->phi);
+        dest_x = this->x + side*std::cos(this->phi);
+        dest_y = this->y + side*std::sin(this->phi);
         move_x = dest_x - this->x;
         move_y = dest_y - this->y;
         move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
@@ -536,11 +536,12 @@ void TerminalControlHusky::testSqMove(double side)
         dest_y = init_y + side*std::sin(this->phi);
         move_x = dest_x - init_x;
         move_y = dest_y - init_y;
-        move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+        move_dist = ((this->phi > -45*M_PI/180 && this->phi < 45*M_PI/180) || this->phi > 135*M_PI/180 || this->phi < -135*M_PI/180) ? move_x/std::cos(this->phi) : move_y/std::sin(this->phi); // Relative to Husky direction
         ROS_INFO("Moving forward by %lfm. Expect to reach (%lf, %lf), which is %lf away", side, dest_x, dest_y, move_dist);
         int count = 0;
-        while(move_dist >= 0.1) // While error greater than 0.1m
+        while(abs(move_dist) >= 0.01) // While error greater than 0.1m
         {
+            // ROS_INFO_STREAM("Dist: " << move_x << "," << move_y << "," << move_dist << "; phi: " << this->phi*180/M_PI);
             // Set forward velocity with respect to distance, limit to max_v
             vel = (KP_dist * move_dist) > this->max_v ? this->max_v : KP_dist * move_dist;
 
@@ -556,7 +557,7 @@ void TerminalControlHusky::testSqMove(double side)
             ros::spinOnce();
             move_x = dest_x - this->x;
             move_y = dest_y - this->y;
-            move_dist = std::sqrt((move_x*move_x) + (move_y*move_y));
+            move_dist = ((this->phi > -45*M_PI/180 && this->phi < 45*M_PI/180) || this->phi > 135*M_PI/180 || this->phi < -135*M_PI/180) ? move_x/std::cos(this->phi) : move_y/std::sin(this->phi); // Relative to Husky direction
 
             rate.sleep();
         }
@@ -573,7 +574,7 @@ void TerminalControlHusky::testSqMove(double side)
         unwrapAngle(dest_phi);
         move_angle = dest_phi - init_phi;
 
-        while (abs(move_angle) >= 0.1) // While error greater than 0.1m
+        while (abs(move_angle) >= 0.02) // While error greater than 0.1 rad
         {
             // Scale angle error as velocity to turn (Proportional Controller), limit speed of rotation as this->max_w
             ang = abs(KP_angle * move_angle) >= this->max_w ? this->max_w : KP_angle * abs(move_angle);
@@ -590,6 +591,7 @@ void TerminalControlHusky::testSqMove(double side)
         ros::spinOnce();
         error = this->phi - dest_phi;
         ROS_INFO("After rotation phi: %lf, which is %lf away from goal\n", this->phi, error);
+        ros::Duration(1).sleep(); // sleep for a second
     }
 }
 
@@ -610,10 +612,10 @@ void TerminalControlHusky::angleToZero()
     }
 }
 
-double TerminalControlHusky::getSign(double &num)
+int TerminalControlHusky::getSign(double num)
 {
     if (num < 0)
-        return -1.0;
+        return -1;
     else 
-        return 1.0;
+        return 1;
 }

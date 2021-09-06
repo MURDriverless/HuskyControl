@@ -93,7 +93,7 @@ class TerminalControlHusky{
 
     // used to re initialise husky pose to (0,0) and 0degrees
     void angleToZero();
-    double getSign(double &);
+    int getSign(double);
     bool reinitialise = false;
     float initX = 0;
     float initY = 0;
