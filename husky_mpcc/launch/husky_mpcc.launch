@@ -5,9 +5,9 @@
         For use on CLI e.g. "roslaunch husky_mpcc husky_mpcc.launch rviz:=0"
     -->
 
-    <arg name="node_start_delay" default="5.0"/>
+    <arg name="node_start_delay" default="10.0"/>
     <arg name="gazebo" default="1"/>
-    <arg name="map" default="husky_eufs"/>
+    <arg name="map" default="husky_medium_track"/> <!-- husky_eufs; husky_medium_track; -->
     <arg name="rviz" default="1"/>
   
     <arg name="comm" default="1"/> <!-- Want to communicate with SLAM and stuff -->
@@ -19,7 +19,7 @@
     <group if="$(arg gazebo)">
 		<!-- <include file="$(find husky_gazebo)/launch/husky_playpen.launch"/> -->
 	        <!-- <include file="$(find husky_gazebo)/launch/husky_empty_world.launch"/> -->
-        <include file="$(find husky_gazebo)/launch/$(arg map).launch"/>
+        <include file="$(find husky_mpcc)/launch/$(arg map).launch"/>
 	</group>
     
     <!--################# RVIZ ###################-->

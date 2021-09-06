@@ -27,13 +27,12 @@ A simple unicycle model is used in this version
 4. `catkin build` then `source devel/setup.bash`
 5. `rosrun husky_mpcc husky_mpcc -0 -1`
 
-## To test EUFS/Small track in Gazebo Simulation (Using Husky Sim)
+## To test EUFS/Small or other track in Gazebo Simulation (Using Husky Sim)
 1. Do above steps 1 to 3.
 2. Install [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
 3. Clone this package, then build it with `catkin build`
-4. Please set `<distro>` as your ROS distro version, e.g. melodic, before running `sudo cp ToMove/husky_eufs.launch /opt/ros/<distro>/share/husky_gazebo/launch`.
-5. Husky Sim can probably directly load models and world from mursim package, not sure how, so we'll do a bit of moving stuff around. For step 6 to 8, you may need `sudo chown -R user:group directory` to own the directories from ROOT. Replace user:group with your Linux user:group, directory as the folder that contains the file you need to modify.
-6. Add the following lines to `/opt/ros/<distro>/share/husky_gazebo/package.xml` if they are not there
+4. Husky Sim can probably directly load models and world from mursim package, not sure how, so we'll do a bit of moving stuff around. For step 5 to 7, you may need `sudo chown -R user:group directory` to own the directories from ROOT. Replace user:group with your Linux user:group, directory as the folder that contains the file you need to modify or folder you're moving stuff to.
+5. Add the following lines to `/opt/ros/<distro>/share/husky_gazebo/package.xml` if they are not there
 ```
   <exec_depend>gazebo_ros</exec_depend>
 
@@ -41,9 +40,10 @@ A simple unicycle model is used in this version
     <gazebo_ros gazebo_model_path="${prefix}/models"/>
   </export>
 ```
-7. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
-8. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
-9. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch` and it'll launch the Husky running in eufs_track.
+6. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
+7. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
+8. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch` and it'll launch the Husky running in eufs_track.
+9. You can also do `roslaunch husky_mpcc husky_mpcc.launch map:="trackname"` to try other maps, check the launch file for more details.
 
 ### Issues with package building
 You may want to try and build the package from scratch, follow these steps.
@@ -53,8 +53,6 @@ You may want to try and build the package from scratch, follow these steps.
 4. Clone this repo, replace everything except for External folder.
 
 ## To Do
-1. Test if setting soft constraint on w will result in better performance compared to hard bounding constraint.
-2. Physical Testing tunings.
-3. Test transition from Slow Lap in sim, then in real life.
-4. Lap Count, stop after 9 laps assuming 1 slow lap.
-5. Husky Sim can probably directly load models and world from mursim package, not sure how.
+1. Test on more complex tracks.
+2. Physical Testing tunings, then test transition in real life.
+3. Husky Sim can probably directly load models and world from mursim package, not sure how. Will invetigate if have time.
