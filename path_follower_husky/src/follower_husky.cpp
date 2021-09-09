@@ -21,7 +21,6 @@ HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w)
     path_y.reserve(500);
     centre_points.reserve(500);
     centre_splined.reserve(2000);
-    centre_endOfLap.reserve(100);
     xp.reserve(200);
     yp.reserve(200);
     T.reserve(200);
@@ -54,6 +53,10 @@ void HuskyFollower::spin()
     publishCtrl();
     pushPathViz();
     clearVars();
+    
+    if (fastLapReady)
+        shut_down();
+
     ros::Rate(HZ).sleep();
 }
 
@@ -195,6 +198,13 @@ void HuskyFollower::publishCtrl()
     vel_msg.angular.z = ang_velocity;
 
     pub_control.publish(vel_msg);
+}
+void HuskyFollower::shut_down()
+{
+    ROS_INFO_STREAM("[FOLLOWER] shutting down...");
+    clearVars();
+    centre_points.clear();
+    centre_splined.clear();
 }
 
 // compute linear and angular velocity commands

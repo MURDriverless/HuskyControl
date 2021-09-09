@@ -286,7 +286,7 @@ void PlannerNode::coneCallback(const mur_common::cone_msg &msg)
             }
             else if (msg.colour[i] == "na")
             {
-                std::cout << "PLANNER: 'na' cone colour passed, skipping" << std::endl;
+                std::cout << "[PLANNER] 'na' cone colour passed, skipping" << std::endl;
             }
             else if (msg.colour[i] == "BIG" || msg.colour[i] == "ORANGE")
             {

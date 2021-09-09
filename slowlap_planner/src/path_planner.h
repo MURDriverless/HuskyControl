@@ -20,10 +20,10 @@
 #include "path_point.h"
 
 #define TRACKWIDTH 4
-#define MAX_PATH_ANGLE1 80      // angle constrain for the path point formed
-#define MAX_PATH_ANGLE2 280     // angle constrain for the path point formed
-#define MAX_POINT_DIST 10        // distance constrain for path point formed
-#define MIN_POINT_DIST 0.5      // distance constrain for path point formed
+#define MAX_PATH_ANGLE1 80      // angle constraint for the path point formed
+#define MAX_PATH_ANGLE2 280     // angle constraint for the path point formed
+#define MAX_POINT_DIST 10       // distance constraint for path point formed
+#define MIN_POINT_DIST 0.5      // distance constraint for path point formed
 #define CERTAIN_RANGE 5         // if cone is within this range, cone positions are certain and no longer updated
 
 
@@ -39,13 +39,14 @@ public:
 
 private:
     std::vector<PathPoint> centre_points;   // vector of path points
+    std::vector<PathPoint> cenPoints_temp;  // temporary vector
     std::vector<PathPoint> rejected_points; // rejected path points, for visualisation purposes
     std::vector<Cone> raw_cones;            // copy of cones passed by SLAM
     std::vector<Cone*> future_cones;        // pointer to cones to be sorted
     std::vector<Cone*> left_cones;		    // Cones on left-side of track (sorted)
     std::vector<Cone*> right_cones;		    // Cones on right-side of track (sorted)
     std::vector<Cone*> timing_cones;        // pointer to Orange cones		
-    std::vector<Cone*> left_unsorted;      // pointer to left cones (unsorted)
+    std::vector<Cone*> left_unsorted;       // pointer to left cones (unsorted)
     std::vector<Cone*> right_unsorted;      // pointer to right cones (unsorted)
     std::vector<Cone*> thisSide_cone;       // (temporary var) pointer to cones on one side, used for cone sorting and generating path points
     std::vector<Cone*> oppSide_cone;        // (temporary var) pointer to opposite side cones, used for cone sorting and generating path points
@@ -67,10 +68,9 @@ private:
     bool passedByAll = false;       // flag when all cones have been passed by
     int leftIndx = 0;               // index of left cones vector
     int rightIndx = 0;              // index of right cones vector            
-    int passedByIndex = 0;
-    int passedByPntIndx = 2;
-    int count = 0;
-    int rejectCount = 0;
+    int passedByIndex = 0;          // index used for raw_cones
+    int passedByPntIndx = 2;        // index used for centre_points, does not need to start at 0
+    int rejectCount = 0;            // visulisation of rejected points
     
     bool const_velocity;
     bool first_run = true;
@@ -107,7 +107,7 @@ private:
     static bool compareConeCost(Cone* const&, Cone* const&);
     static bool comparePointDist(PathPoint& pt1, PathPoint& pt2);
     void sortAndPushCone(std::vector<Cone*> &cn);
-    void sortPathPoints();
+    void sortPathPoints(std::vector<PathPoint>&,PathPoint&);
 
 };
 
