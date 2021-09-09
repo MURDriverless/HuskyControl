@@ -96,7 +96,6 @@ private:
     std::vector<double> path_y;
     std::vector<PathPoint> centre_points;       // centre line points of race tack, from path planner
     std::vector<PathPoint> centre_splined;      // splined centre line points, see func generateSpline()
-    std::vector<PathPoint> centre_endOfLap;     // path to follow when almost end of lap
     PathPoint currentGoalPoint = PathPoint(car_x,car_y);
 
     // temp vectors for splining
@@ -136,7 +135,8 @@ private:
     double calcDist(const PathPoint &p1, const PathPoint &p2);
     void clearVars();                   // clear temporary variables, vectors
     void getGoalPoint();                // see cpp file for description
-    double getSign(double&);              
+    double getSign(double&);  
+    void shut_down();                   // when slow lap is complete            
 };
 
 

@@ -23,6 +23,7 @@ PathPlanner::PathPlanner(float car_x, float car_y, std::vector<Cone> &cones, boo
 	left_cones.reserve(250);
 	right_cones.reserve(250);
 	centre_points.reserve(300);
+	cenPoints_temp.reserve(50);
 	rejected_points.reserve(300);
 	thisSide_cone.reserve(150);
 	oppSide_cone.reserve(150);
@@ -36,7 +37,7 @@ PathPlanner::PathPlanner(float car_x, float car_y, std::vector<Cone> &cones, boo
 	addCentrePoints();								// add centre points from sorted cones
 	centralizeTimingCones();						// get mid point of orange cones
 	if (timingCalc)
-		sortPathPoints();
+		sortPathPoints(centre_points,init_pos);
 	resetTempConeVectors();							// Clear pointers and reset l/right_unsorted
 	if (DEBUG) std::cout << "[PLANNER] initial path points size : " << centre_points.size() <<std::endl; //this should give 3 under normal circumstances
 }
@@ -91,7 +92,7 @@ void PathPlanner::update(std::vector<Cone> &new_cones, const float car_x, const 
 				if (!timingCalc && !left_start_zone) // if orange cones not yet passedBy
 				{
 					centralizeTimingCones();
-					sortPathPoints();
+					sortPathPoints(centre_points,init_pos);
 				}
 			}
 		}
@@ -101,13 +102,14 @@ void PathPlanner::update(std::vector<Cone> &new_cones, const float car_x, const 
 		resetTempConeVectors();
 	}
 }
-void PathPlanner::sortPathPoints()
+void PathPlanner::sortPathPoints(std::vector<PathPoint>&cenPoin,PathPoint&refPoint)
 {
-	for (auto &p:centre_points)
+	
+	for (auto &p:cenPoin)
 	{
-		p.dist = calcDist(p,init_pos);
+		p.dist = calcDist(p,refPoint);
 	}
-	sort(centre_points.begin(),centre_points.end(),comparePointDist);
+	sort(cenPoin.begin(),cenPoin.end(),comparePointDist);
 }
 
 // checks whether track is (almost) finished
@@ -133,12 +135,14 @@ bool PathPlanner::joinFeasible(const float &car_x, const float &car_y)
 void PathPlanner::returnResult(std::vector<float> &X, std::vector<float> &Y, std::vector<float> &V,
 								std::vector<Cone>&Left, std::vector<Cone>&Right,std::vector<PathPoint>&markers)
 {
+	int j=0;
 	for (auto &e: centre_points)
 	{
 		X.push_back(e.x); 
 		Y.push_back(e.y); 
 		V.push_back(e.velocity);
-		if (e.cone1 != NULL)
+		j++;
+		if ((e.cone1 != NULL)&&(centre_points.size()-j<10)) //to show only 5 markers
 		{
 			markers.push_back(e.cone1->position);
 			markers.back().accepted = true;
@@ -150,7 +154,7 @@ void PathPlanner::returnResult(std::vector<float> &X, std::vector<float> &Y, std
 	// for rviz visualisation purposes
 	if (!rejected_points.empty())
 	{
-		count++;
+		rejectCount++;
 		for (auto &r: rejected_points)
 		{
 			markers.push_back(r.cone1->position);
@@ -273,10 +277,11 @@ void PathPlanner::addCentrePoints()
 
 	bool feasible;
 	PathPoint cp;
-	int indx;
+	int indx1, indx2;
 	Cone* opp_cone;
 	thisSide_cone.clear();
 	oppSide_cone.clear();
+	cenPoints_temp.clear();
 
 
 	//we will look at the side with more cones seen
@@ -286,7 +291,8 @@ void PathPlanner::addCentrePoints()
 			thisSide_cone.push_back(con);
 		for (auto &con:left_cones)
 			oppSide_cone.push_back(con);
-		indx = rightIndx;
+		indx1 = rightIndx;
+		indx2 = leftIndx;
 	}
 	else if (left_cones.size() >= right_cones.size())
 	{
@@ -294,10 +300,11 @@ void PathPlanner::addCentrePoints()
 			thisSide_cone.push_back(con);
 		for (auto &con: right_cones)
 			oppSide_cone.push_back(con);
-		indx = leftIndx;
+		indx1 = leftIndx;
+		indx2 = rightIndx;
 	}
 	
-	for (int i = indx; i < thisSide_cone.size(); i++)
+	for (int i = indx1; i < thisSide_cone.size(); i++)
 	{
 		// only generate points from cones that havent been passed by yet, or if paired less than 3 times
 		if((!thisSide_cone[i]->passedBy)||(thisSide_cone[i]->paired<3))
@@ -307,7 +314,8 @@ void PathPlanner::addCentrePoints()
 			cp = generateCentrePoint(thisSide_cone[i], opp_cone, feasible);
 			if (feasible)
 			{
-				centre_points.push_back(cp);
+				// centre_points.push_back(cp);
+				cenPoints_temp.push_back(cp);
 				cp.cone1->paired ++;
 				cp.cone2->paired ++;	
 				thisSide_cone[i]->mapped++;
@@ -316,6 +324,30 @@ void PathPlanner::addCentrePoints()
 		}
 	}
 
+	for (int i = indx2; i< oppSide_cone.size();i++)
+	{
+		//only generate points in this loop for cones that havent been paired from previous loop
+		if ((!oppSide_cone[i]->passedBy)&&(oppSide_cone[i]->paired==0))
+		{
+			opp_cone = findOppositeClosest(*oppSide_cone[i],thisSide_cone);
+			feasible = false;
+			cp = generateCentrePoint(oppSide_cone[i],opp_cone,feasible);
+			if (feasible)
+			{
+				cenPoints_temp.push_back(cp);
+				cp.cone1->paired ++;
+				cp.cone2->paired ++;	
+				oppSide_cone[i]->mapped++;
+				opp_cone->mapped++;
+			}
+		}
+	}
+	sortPathPoints(cenPoints_temp,centre_points.back());
+	for (auto &p:cenPoints_temp)
+	{
+		centre_points.push_back(p);
+	}
+	
 
 
 }
@@ -410,7 +442,7 @@ void PathPlanner::updateStoredCones(std::vector<Cone>&new_cones)
 	{
 		for(int i = left_cones.size()-1;i>=0; i--)
 		{
-			if (!left_cones[i]->passedBy)
+			if (!left_cones[i]->passedBy || left_cones[i]->paired==0)
 				{
 					left_cones.pop_back();
 				}
@@ -427,7 +459,7 @@ void PathPlanner::updateStoredCones(std::vector<Cone>&new_cones)
 	{
 		for(int i = right_cones.size()-1; i>=0; i--)
 		{
-			if (!right_cones[i]->passedBy)
+			if (!right_cones[i]->passedBy || right_cones[i]->paired==0)
 				{
 					right_cones.pop_back();
 				}
@@ -512,6 +544,9 @@ void PathPlanner::centralizeTimingCones()
 	// there could be 2 cones on each side (4 total), we dont have a way to determine which is left or right
 	// taking the average ditance of the timing cones is same as getting their midpoint
 		
+	if (timing_cones.empty())
+		return;
+	
 	PathPoint avg_point(0, 0);
 	
 	for (int i = 0; i < timing_cones.size(); i++)
@@ -647,8 +682,11 @@ void PathPlanner::resetTempConeVectors()
 	newConesToSort = false;
 	newConesSorted = false;
 	gotNewCones = false;
-	if (count > 5)
-	rejected_points.clear();
+	if (rejectCount > 5)
+	{
+		rejected_points.clear();
+		rejectCount = 0;
+	}
 }
 
 void PathPlanner::removeFirstPtr(std::vector<Cone*>& cone_vec)
@@ -762,7 +800,7 @@ void PathPlanner::sortAndPushCone(std::vector<Cone*> &cn)
 
 			// might need to add different weights for each cost later,
 			// but it works with equal weights for now
-			cn[i]->cost = cost1 + cost2 + cost3;
+			cn[i]->cost = cost1 + (2*cost2) + (3*cost3);
 			
 		}
 
