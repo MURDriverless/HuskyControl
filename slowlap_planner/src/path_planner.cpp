@@ -800,7 +800,7 @@ void PathPlanner::sortAndPushCone(std::vector<Cone*> &cn)
 
 			// might need to add different weights for each cost later,
 			// but it works with equal weights for now
-			cn[i]->cost = cost1 + (2*cost2) + (3*cost3);
+			cn[i]->cost = cost1 + (cost2) + (cost3);
 			
 		}
 
