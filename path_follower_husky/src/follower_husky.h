@@ -30,7 +30,7 @@
 #define STOP_INDEX 2                // centre point where the car should stop
 
 //PID gains:
-#define KP 1   
+#define KP 2   
 #define KI 1   
 #define KD  1  
 
@@ -39,7 +39,7 @@
 #define LFV  0.1                     // look forward gain
 #define LFC  2.5                     // look ahead distance 
 #define V_CONST 1.0                  // constant velocity 1m/s (for now)
-#define MAX_V 0.8                    // for Husky, test only, should be 1m/s to match mur car
+#define MAX_V 3                    // for Husky, test only, should be 1m/s to match mur car
 #define MAX_W 30                     // for Husky, angular velo in degrees
 #define HZ 24                        // ROS spin frequency (can increase to 20)
 
@@ -92,8 +92,6 @@ private:
     bool new_centre_points = false;
     int cenPoints_updated = 0;
 
-    std::vector<double> path_x;          
-    std::vector<double> path_y;
     std::vector<PathPoint> centre_points;       // centre line points of race tack, from path planner
     std::vector<PathPoint> centre_splined;      // splined centre line points, see func generateSpline()
     PathPoint currentGoalPoint = PathPoint(car_x,car_y);
