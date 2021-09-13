@@ -52,6 +52,35 @@ Track::Track(std::string file)
     std::vector<double> y_outer = jsonTrack["Y_o"];
     MultiplyVector(y_outer, FACTOR);
     Y_outer = Eigen::Map<Eigen::VectorXd>(y_outer.data(), y_outer.size());
+
+    // Write current track into csv
+    std::ofstream trackfile;
+    trackfile.open("/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/track.csv");
+    trackfile << "x_o,y_o,x_i,y_i,x,y\n";
+    for (int i = 0; i < x.size(); i++)
+    {
+        if (i > x_outer.size())
+        {
+            trackfile << "0,0,";
+        }
+        else
+        {
+            trackfile << x_outer[i] << "," << y_outer[i] << ",";
+        }
+
+        if (i > x_inner.size())
+        {
+            trackfile << "0,0,";
+        }
+        else
+        {
+            trackfile << x_inner[i] << "," << y_inner[i] << ",";
+        }
+
+        trackfile << x[i] << "," << y[i] << ",\n";
+    }
+    
+    trackfile.close();
 }
 
 Track::Track(std::vector<double> x_outer, std::vector<double> y_outer, 

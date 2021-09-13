@@ -164,7 +164,33 @@ int main(int argc, char **argv) {
             if (x0.s > 1) // Cross a little bit then stop
             {
                 controlNode.publishVel(0, 0); // Command desired velocity
-                return 0; // Finish race
+                if (comm)
+                {
+                    return 0; // Finish race
+                }
+                else
+                {
+                    controlNode.fastlapready = false; // end fast lap
+                    double mean_time = 0.0;
+                    double max_time = 0.0;
+                    for(MPCReturn log_i : log)
+                    {
+                        mean_time += log_i.time_total;
+                        if(log_i.time_total > max_time)
+                            max_time = log_i.time_total;
+                    }
+                    // std::cout << "mean nmpc time " << mean_time/double(jsonConfig["n_sim"]) << std::endl;
+                    for (int i = 0; i < STATROW+1; i++)
+                        std::cout << std::endl;
+                    std::cout << "mean nmpc time " << mean_time/count << std::endl;
+                    std::cout << "max nmpc time " << max_time << std::endl;
+                    std::cout << "wheel violation count " << wheel_violate(0) << std::endl;
+                    std::cout << "max wheel violation " << wheel_violate(1) << std::endl;
+                    std::cout << "exitflag 1 count " << error_count(0) << std::endl;
+                    std::cout << "exitflag 2 count " << error_count(1) << std::endl;
+                    plotter.plotSim(log,track_xy, track_);
+                    return 0;
+                }
             }
         }
 
@@ -275,7 +301,7 @@ int main(int argc, char **argv) {
             
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
 
-            if(x0.s < cur_s) // Finished a lap, progress resets
+            if(x0.s < cur_s && x0.s < 1) // Finished a lap, progress resets
             {
                 lap_count++;
                 cur_s = 0;
