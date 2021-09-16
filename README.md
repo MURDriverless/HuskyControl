@@ -11,14 +11,24 @@ To launch specific packages, refer to that package's README.
 ## Requirements
 Install [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
 
-## To use with Husky
+## To use with Husky, remote control with Master/Slave
 1. Connect to its WiFi
-2. `ssh administrator@192.168.131.1`
-3. Transfer the husky_terminal_control package into Husky
-4. `catkin_make` to build
+2. If this is your first time doing this, you'll likely need to set up the workspace, refer to "Husky_getStarted.pdf" step 7.
+3. 
+```
+export ROS_MASTER_URI=http://cpr-umb02:11311
+export ROS_HOSTNAME=<your pc hostname>
+```
+4. run `rostopic list` and you should see Husky's ROS topics, else check connection or do step 2.
+5. `roslaunch husky_viz view_robot.launch`
+6. source your workspace/devel/setup.bash, and you can run your own package to interact with Husksy. 
+7. If using `roslaunch`, make sure Gazebo and RVIZ is not set to launch together! Typically you'll have to `gui:=false rviz:=false` when launching package
 
 ## Transfer files to and from Husky
-`scp <directory to file to transfer> <destination directory>`
+```
+ssh administrator@192.168.131.1`
+scp <directory to file to transfer> <destination directory>`
+```
 
 husky directory would be administrator@192.168.131.1:~/<directorypath>
 
@@ -44,4 +54,3 @@ See path_follower_husky [readme](https://github.com/MURDriverless/HuskyControl/b
 # To Do
 1. Pure Pursuit with slow lap track
 2. Backup whole drive of Husky
-3. ROS Master/Slave setup so won't mess up Husky's original files
