@@ -26,8 +26,8 @@ export ROS_HOSTNAME=<your pc hostname>
 
 ## Transfer files to and from Husky
 ```
-ssh administrator@192.168.131.1`
-scp <directory to file to transfer> <destination directory>`
+ssh administrator@192.168.131.1
+scp <directory to file to transfer> <destination directory>
 ```
 
 husky directory would be administrator@192.168.131.1:~/<directorypath>
