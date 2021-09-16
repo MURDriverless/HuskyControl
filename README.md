@@ -13,7 +13,7 @@ Install [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Sim
 
 ## To use with Husky, remote control with Master/Slave
 1. Connect to its WiFi
-2. If this is your first time doing this, you'll likely need to set up the workspace, refer to "Husky_getStarted.pdf" step 7.
+2. If this is your first time doing this, you'll likely need to set up the workspace, refer to Step 7: Setting up Your Workspace in "Husky_getStarted.pdf", which is in the Guide folder.
 3. 
 ```
 export ROS_MASTER_URI=http://cpr-umb02:11311
