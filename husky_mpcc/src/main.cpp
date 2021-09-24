@@ -15,6 +15,7 @@
 #include "MPC/mpc.h"
 #include "Model/integrator.h"
 #include "Params/track.h"
+#include "Params/params.h"
 #include "Plotting/plotting.h"
 
 #include "ros/ros.h" // Must include for all ROS C++
@@ -122,7 +123,7 @@ int main(int argc, char **argv) {
     // std::cout << testTrackConstraint(json_paths) << std::endl;
 
     // std::cout << testCost(json_paths) << std::endl;
-
+    BoundsParam boundParam = BoundsParam(jsonConfig["bounds_path"]);
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     Plotting plotter = Plotting(jsonConfig["Ts"],json_paths);
 
@@ -278,7 +279,7 @@ int main(int argc, char **argv) {
             Eigen::Vector4d command(x0.v, x0.w, vL, vR);
 
             // Check if command satisfy wheel constraints
-            if (abs(vL) > 1.001 || abs(vR) > 1.001)
+            if (abs(vL) > boundParam.upper_state_bounds.v_u || abs(vR) > boundParam.upper_state_bounds.v_u)
             {
                 wheel_violate(0)++;
                 wheel_violate(1) = abs(vL) > wheel_violate(1) ? abs(vL) : wheel_violate(1);
