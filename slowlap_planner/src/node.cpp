@@ -13,9 +13,7 @@
 PlannerNode::PlannerNode(ros::NodeHandle n, bool const_velocity, float v_max, float v_const, float max_f_gain)
     : nh(n), const_velocity(const_velocity), v_max(v_max), v_const(v_const), max_f_gain(max_f_gain)
 {
-    X.reserve(300);
-    Y.reserve(300);
-    V.reserve(300);
+    Path.reserve(300);
     Left.reserve(200);
     Right.reserve(200);
     cones.reserve(500);
@@ -98,6 +96,7 @@ int PlannerNode::launchPublishers()
         pub_pathCones = nh.advertise<visualization_msgs::MarkerArray>(PATH_CONES_TOPIC,1);
         pub_map = nh.advertise<mur_common::map_msg>(FINISHED_MAP_TOPIC,1);
         pub_sorting_markers = nh.advertise<visualization_msgs::MarkerArray>(SORTING_MARKER,1);
+        pub_path_marks =  nh.advertise<visualization_msgs::MarkerArray>(PATH_MARKER,1);
 
     }
     catch (const char *msg)
@@ -143,8 +142,11 @@ void PlannerNode::SlowLapFinished()
     map.y_i = ConeY;
 
     //copy path points
-    map.x = X;
-    map.y = Y;
+    for (auto &p:Path)
+    {
+        map.x.push_back(p.x);
+        map.y.push_back(p.y);
+    }
 
     map.mapready = true;
     map.frame_id = "map";
@@ -169,7 +171,7 @@ void PlannerNode::spinThread()
     waitForMsgs();
     if (plannerInitialised)
     {
-        planner->update(cones, car_x, car_y, X, Y, V, Left, Right,Markers,plannerComplete);
+        planner->update(cones, car_x, car_y, Path, Left, Right,Markers,plannerComplete);
         if (plannerComplete)
             SlowLapFinished();
         
@@ -207,9 +209,7 @@ void PlannerNode::pushHealth(ClockTP& s, ClockTP& e, ClockTP& rs, ClockTP& re)
 //clear temporary vectors, and reset some flags
 void PlannerNode::clearTempVectors()
 {
-    X.clear();
-    Y.clear();
-    V.clear();
+    Path.clear();
     Markers.clear();
     sortMarks.clear();
     Left.clear();
@@ -226,15 +226,15 @@ void PlannerNode::pushPathViz()
     path_viz_msg.header.frame_id = "odom"; //"map"
 
     std::vector<geometry_msgs::PoseStamped> poses;
-    poses.reserve(X.size());
+    poses.reserve(Path.size());
 
-    for (int p = 0; p < X.size(); p++)
+    for (int p = 0; p < Path.size(); p++)
     {
         geometry_msgs::PoseStamped item; 
         item.header.frame_id = "map";
         item.header.seq = p;
-        item.pose.position.x = X[p];
-        item.pose.position.y = Y[p];
+        item.pose.position.x = Path[p].x;
+        item.pose.position.y = Path[p].y;
         item.pose.position.z = 0.0;
 
         poses.emplace_back(item);
@@ -242,6 +242,14 @@ void PlannerNode::pushPathViz()
 
     path_viz_msg.poses = poses;
     pub_path_viz.publish(path_viz_msg);
+
+    visualization_msgs::MarkerArray pathMarks;
+    pathMarks.markers.resize(Path.size());
+    for (int i=0;i<Path.size();i++)
+    {
+        setMarkerProperties2(&pathMarks.markers[i],Path[i],i,i,'p');
+    }
+    pub_path_marks.publish(pathMarks);
 }
 
 // publish path points for path follower
@@ -249,9 +257,12 @@ void PlannerNode::pushPath()
 {
     mur_common::path_msg msg;
     msg.header.frame_id = "map";
-    msg.x = X;
-    msg.y = Y;
-    msg.v = V;
+    for (auto &p:Path)
+    {
+        msg.x.push_back(p.x);
+        msg.y.push_back(p.y);
+        msg.v.push_back(p.velocity);
+    }
     pub_path.publish(msg);
 }
 
@@ -414,7 +425,12 @@ void PlannerNode::setMarkerProperties2(visualization_msgs::Marker *marker,PathPo
     marker->action = visualization_msgs::Marker::ADD;
     marker->lifetime = ros::Duration(1);
 
-    marker->text = std::to_string(n);
+    if (c=='p')
+    {
+        marker->text = std::to_string(cone.angle);
+    }
+    else
+        marker->text = std::to_string(n);
 
     geometry_msgs::Point p;
     marker->pose.orientation.x = 0.0;
@@ -440,6 +456,13 @@ void PlannerNode::setMarkerProperties2(visualization_msgs::Marker *marker,PathPo
         marker->color.r = 0.89;
         marker->color.g = 1.0;
         marker->color.b = 0.6;
+    }
+    else if (c=='p')
+    {
+        marker->color.r = 1.0;
+        marker->color.g = 1.0;
+        marker->color.b = 1.0;
+        marker->scale.z = 0.5;
     }
     marker->lifetime = ros::Duration(0.1);
 }

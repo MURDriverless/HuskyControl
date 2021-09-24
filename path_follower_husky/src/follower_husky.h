@@ -29,7 +29,7 @@
 #define STOP_INDEX 2                // centre point where the car should stop
 
 //PID gains:
-#define KP 2   
+#define KP 2.2   
 #define KI 1   
 #define KD  1  
 
@@ -40,7 +40,7 @@
 #define V_CONST 1.0                  // constant velocity 1m/s (for now)
 #define MAX_V 3                    // for Husky, test only, should be 1m/s to match mur car
 #define MAX_W 30                     // for Husky, angular velo in degrees
-#define HZ 24                        // ROS spin frequency (can increase to 20)
+#define HZ 30                        // ROS spin frequency (can increase to 20)
 
 // ROS topics
 #define ODOM_TOPIC "/odometry/filtered"                     //"/mur/slam/Odom" in murSim
