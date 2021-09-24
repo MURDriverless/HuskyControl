@@ -45,6 +45,7 @@
 #define SORTED_RCONES_TOPIC "/mur/planner/right_sorted_cones"
 #define FASTLAP_READY_TOPIC "/mur/control/transition"
 #define FINISHED_MAP_TOPIC "/mur/planner/map"
+#define SORTING_MARKER "/mur/planner/sortCones"
 
 #define HZ 10   // publish frequency
 
@@ -76,6 +77,7 @@ private:
     void pushPath();
     void pushHealth(ClockTP&, ClockTP&, ClockTP&, ClockTP&);
     void pushSortedCones();
+    void pushSortingMarkers();
     void waitForMsgs();
     void odomCallback(const nav_msgs::Odometry&);
     void coneCallback(const mur_common::cone_msg&);
@@ -84,6 +86,7 @@ private:
     void callback(const nav_msgs::Odometry&, const mur_common::cone_msg&);
     void setMarkerProperties(visualization_msgs::Marker *marker,PathPoint cone1,
                                         PathPoint cone2,int n,bool accepted);
+    void setMarkerProperties2(visualization_msgs::Marker *marker,PathPoint cone,int id,int n,char c);
     void SlowLapFinished();
     
 
@@ -101,6 +104,7 @@ private:
     ros::Publisher pub_pathCones;
     ros::Publisher pub_map;
     ros::Subscriber sub_transition;
+    ros::Publisher pub_sorting_markers;
 
     ros::Time now;                  // diagnostic stuff (MURauto20)
     std::vector<uint32_t> times;    // diagnostic stuff (MURauto20)
@@ -120,6 +124,7 @@ private:
     std::vector<Cone> Right;            // sorted right cones (yellow)
     std::vector<Cone> cones;            // raw cones
     std::vector<PathPoint> Markers;     // rviz
+    std::vector<PathPoint> sortMarks;   // rviz
     
     PathPoint startFin;                 // start/finishline midpoint
     float car_x;                        // car current pos x
