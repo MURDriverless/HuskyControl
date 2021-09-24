@@ -26,6 +26,7 @@ struct PathPoint
     float radius = 0;           // not used
     float velocity = 0;         // not yet used
     float angle = 0;            // not used
+    float dist;                 // distance to car, used for sorting
     Cone* cone1 = NULL;         // to determine from which cone the point was formed
     Cone* cone2 = NULL;         // to determine from which cone the point was formed
     bool accepted = false;      // to determine if path point is acceptable
