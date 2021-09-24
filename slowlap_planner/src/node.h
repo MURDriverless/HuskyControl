@@ -46,6 +46,7 @@
 #define FASTLAP_READY_TOPIC "/mur/control/transition"
 #define FINISHED_MAP_TOPIC "/mur/planner/map"
 #define SORTING_MARKER "/mur/planner/sortCones"
+#define PATH_MARKER "/mur/planner/path_marks"
 
 #define HZ 10   // publish frequency
 
@@ -105,6 +106,7 @@ private:
     ros::Publisher pub_map;
     ros::Subscriber sub_transition;
     ros::Publisher pub_sorting_markers;
+    ros::Publisher pub_path_marks;
 
     ros::Time now;                  // diagnostic stuff (MURauto20)
     std::vector<uint32_t> times;    // diagnostic stuff (MURauto20)
@@ -117,9 +119,7 @@ private:
     bool plannerInitialised = false;    // flag when planner is initialised
     bool plannerComplete = false;       // flag when planner is done 
             
-    std::vector<float> X;               // path_x
-    std::vector<float> Y;               // path_y
-    std::vector<float> V;               // velocity (not used, we are using constant v)
+    std::vector<PathPoint> Path;        // centre line points 
     std::vector<Cone> Left;             // sorted left cones (blue)
     std::vector<Cone> Right;            // sorted right cones (yellow)
     std::vector<Cone> cones;            // raw cones
