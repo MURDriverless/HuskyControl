@@ -24,7 +24,7 @@
 #define MAX_PATH_ANGLE2 280     // angle constraint for the path point formed
 #define MAX_POINT_DIST 10       // distance constraint for path point formed
 #define MIN_POINT_DIST 0.5      // distance constraint for path point formed
-#define CERTAIN_RANGE 5         // if cone is within this range, cone positions are certain and no longer updated
+#define CERTAIN_RANGE 2.5         // if cone is within this range, cone positions are certain and no longer updated
 
 
 const bool DEBUG = true;        //  to show debug messages, switch to false to turn off
@@ -102,7 +102,8 @@ private:
     void updateStoredCones(std::vector<Cone>&);
     void updateCentrePoints();
     float computeCost1(Cone* &cn1, Cone* &cn2);
-    float computeCost2(Cone* &cn1, std::vector<Cone*> &oppCone1,std::vector<Cone*> &oppCone2);
+    float computeCost2a(Cone* &cn1, std::vector<Cone*> &oppCone1,std::vector<Cone*> &oppCone2);
+    float computeCost2b(Cone* &cn1, std::vector<Cone*> &oppCone);
     float computeCost3(Cone* &cn1, std::vector<Cone*> &cn2);
     static bool compareConeCost(Cone* const&, Cone* const&);
     static bool comparePointDist(PathPoint& pt1, PathPoint& pt2);

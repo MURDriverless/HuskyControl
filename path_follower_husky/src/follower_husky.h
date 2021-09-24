@@ -18,7 +18,6 @@
 #include "spline.h"
 
 
-#define PI 3.14159265359
 #define LENGTH 2.95                 // length of vehicle (front to rear wheel)
 #define G  9.81                     // gravity
 #define MAX_ACC 11.772              // 1.2*G, copied from Dennis (MURauto20)

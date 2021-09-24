@@ -20,6 +20,7 @@ PlannerNode::PlannerNode(ros::NodeHandle n, bool const_velocity, float v_max, fl
     Right.reserve(200);
     cones.reserve(500);
     Markers.reserve(1000); 
+    sortMarks.reserve(100);
     
     times.reserve(std::numeric_limits<uint16_t>::max());    // diagnostic stuff (MURauto20)
     rtimes.reserve(std::numeric_limits<uint16_t>::max());   // diagnostic stuff (MURauto20)
@@ -96,6 +97,7 @@ int PlannerNode::launchPublishers()
         pub_rcones = nh.advertise<mur_common::cone_msg>(SORTED_RCONES_TOPIC, 1);
         pub_pathCones = nh.advertise<visualization_msgs::MarkerArray>(PATH_CONES_TOPIC,1);
         pub_map = nh.advertise<mur_common::map_msg>(FINISHED_MAP_TOPIC,1);
+        pub_sorting_markers = nh.advertise<visualization_msgs::MarkerArray>(SORTING_MARKER,1);
 
     }
     catch (const char *msg)
@@ -209,6 +211,7 @@ void PlannerNode::clearTempVectors()
     Y.clear();
     V.clear();
     Markers.clear();
+    sortMarks.clear();
     Left.clear();
     Right.clear();
     cones.clear();
@@ -302,13 +305,47 @@ void PlannerNode::pushMarkers()
 {
     visualization_msgs::MarkerArray marks;
     marks.markers.resize(Markers.size()/2);
-    int j;
+    int j,k;
     for (int i=0; i<marks.markers.size(); i++)
     {
         j=2*i;
         setMarkerProperties(&marks.markers[i],Markers[j],Markers[j+1],i,Markers[i].accepted);
     }
     pub_pathCones.publish(marks);
+
+
+    j=0;
+    for (auto &c:Left)
+    {
+        if(!c.passedBy)
+        {
+            sortMarks.push_back(c.position);
+            j++;
+        }
+    }
+    for (auto &c:Right)
+    {
+        if(!c.passedBy)
+        {
+            sortMarks.push_back(c.position);
+        }
+    }
+    visualization_msgs::MarkerArray sortingMarks;
+    sortingMarks.markers.resize(sortMarks.size());
+    k=1;
+    char col='b';
+    for(int i=0;i<sortMarks.size();i++)
+    {
+        if (i==j)
+        {
+            k = 1;
+            col = 'y';
+        }
+            
+        setMarkerProperties2(&sortingMarks.markers[i],sortMarks[i],i,k,col);
+        k++;      
+    }
+    pub_sorting_markers.publish(sortingMarks);
 }
 
 // marker properties
@@ -364,8 +401,45 @@ void PlannerNode::setMarkerProperties(visualization_msgs::Marker *marker,PathPoi
     }
     if (plannerComplete)
     marker->color.a = 0.0;
-    
-
-    
+        
 }
 
+void PlannerNode::setMarkerProperties2(visualization_msgs::Marker *marker,PathPoint cone,int id,int n,char c)
+{
+    marker->header.frame_id = "odom";
+    marker->header.stamp = ros::Time();
+    marker->ns = "my_namespace";
+    marker->id = id;
+    marker->type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    marker->action = visualization_msgs::Marker::ADD;
+    marker->lifetime = ros::Duration(1);
+
+    marker->text = std::to_string(n);
+
+    geometry_msgs::Point p;
+    marker->pose.orientation.x = 0.0;
+    marker->pose.orientation.y = 0.0;
+    marker->pose.orientation.z = 0.0;
+    marker->pose.orientation.w = 1.0;
+    marker->pose.position.x = cone.x;
+    marker->pose.position.y = cone.y;
+    marker->pose.position.z = 0.8;
+    marker->scale.z = 1.5;
+
+    // alpha and RGB settings
+    // color.a is opacity, 0: invisible
+    marker->color.a = 1.0;
+    if (c=='b')
+    {
+        marker->color.r = 0.6;
+        marker->color.g = 0.8;
+        marker->color.b = 1.0;
+    }
+    else if (c=='y')
+    {
+        marker->color.r = 0.89;
+        marker->color.g = 1.0;
+        marker->color.b = 0.6;
+    }
+    marker->lifetime = ros::Duration(0.1);
+}

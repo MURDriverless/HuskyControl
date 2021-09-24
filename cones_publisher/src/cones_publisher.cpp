@@ -36,7 +36,7 @@ void ConesPublisher::spin()
 {
     waitForMsgs();
     detectCones();
-    makeUncertain(); //uncomment this to simulate uncertainty
+    // makeUncertain(); //uncomment this to simulate uncertainty
     publishCones();
     // if (trueCones_msg_received) std::cout<<"cones received! cones size: "<<true_cones.size()<<std::endl;
     // if (true_cones.size() > 5 && (true_cones.size() == seen_cones.size()))

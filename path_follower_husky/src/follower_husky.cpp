@@ -17,8 +17,6 @@ HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w)
                 :nh(n), max_v(max_v),max_w(max_w)
 {
     //set capacity of vectors
-    path_x.reserve(500);
-    path_y.reserve(500);
     centre_points.reserve(500);
     centre_splined.reserve(2000);
     xp.reserve(200);
@@ -63,8 +61,6 @@ void HuskyFollower::spin()
 // clear temporary vectors and flags
 void HuskyFollower::clearVars()
 {
-    path_x.clear();
-    path_y.clear();
     odom_msg_received = false;
     path_msg_received = false;
     new_centre_points = false;
@@ -314,29 +310,20 @@ void HuskyFollower::generateSplines()
     //there must be at least 3 points for cubic spline to work
     if (centre_points.size() <= 2) //if less than = 2, make a line
     {
-        
-        double tempX, tempY, slopeY,slopeX;
+       centre_splined.clear();
+        double tempX, tempY, slopeY,slopeX,stepX,stepY;
         for (auto &p:centre_points)
         {
             xp.push_back(p.x);
             yp.push_back(p.y);
         }
-        if (centre_points.size() == 1)
+       
+        stepY = (yp.back() - yp.front()) * STEPSIZE;
+        stepX = (xp.back() - xp.front()) * STEPSIZE;       
+        for (double i = 0; i<10; i++)
         {
-            std::cout<<"11111";
-            slopeY = (yp.back() ) / STEPSIZE;
-            slopeX = (xp.back() ) / STEPSIZE;
-        }
-        else
-        {
-            slopeY = (yp.back() - yp.front()) / STEPSIZE;
-            slopeX = (xp.back() - xp.front()) / STEPSIZE;
-        }
-
-        for (double i = 0; i<=2; i+= STEPSIZE)
-        {
-            tempY = slopeY * i;
-            tempX = slopeX * i;
+            tempY = (i*stepY) + yp.front();
+            tempX = (i*stepX) + xp.front();
             centre_splined.emplace_back(tempX,tempY);
         }
     }
