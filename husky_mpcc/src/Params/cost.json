@@ -1,32 +1,31 @@
-
 {
-  "qC" : 0.01,
+  "qC" : 0.5,
   "qL" : 1000,
-  "qVs" : 0.2,
+  "qVs" : 0.5,
 
   "qMu": 1E0,
 
-  "qW" : 1E-2,
+  "qW" : 3E0,
 
   "qBeta" : 5E0,
   "betaKin": 1,
 
-  "rV" : 1E-4,
-  "rW" : 5E-1,
+  "rV" : 1E-2,
+  "rW" : 1E-2,
   "rVs" : 1E-5,
 
   "rdV" : 1E-2,
-  "rdW" : 1E-4,
-  "rdVs" : 1E-4,
+  "rdW" : 1E-5,
+  "rdVs" : 1E-5,
 
-  "qCNmult": 1E3,
-  "qWNmult": 100,
+  "qCNmult": 1E4,
+  "qWNmult": 1E2,
 
-  "sc_quad_track": 4E2,
+  "sc_quad_track": 1E2,
   "sc_quad_tire": 1E4,
   "sc_quad_alpha": 1E4, 
 
-  "sc_lin_track": 2E1,
+  "sc_lin_track": 1E1,
   "sc_lin_tire": 1E2,
   "sc_lin_alpha": 1E2
 }

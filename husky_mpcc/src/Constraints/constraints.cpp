@@ -78,7 +78,7 @@ OneDConstraint Constraints::getLeftWheelConstraint(const State &x) const
     // if (vL > 1.001)
     //     std::cout << "v:" << v << ", w:" << w << ", vL: " << vL << std::endl;
 
-    const double vL_constraint_lower = bounds_.lower_state_bounds.v_l - vL + C_vL_constraint*x_vec;
+    const double vL_constraint_lower = -bounds_.upper_state_bounds.v_u - vL + C_vL_constraint*x_vec;
     const double vL_constraint_upper = bounds_.upper_state_bounds.v_u - vL + C_vL_constraint*x_vec;
 
     return {C_vL_constraint,vL_constraint_lower,vL_constraint_upper};
@@ -111,7 +111,7 @@ OneDConstraint Constraints::getRightWheelConstraint(const State &x) const
     //     std::cout << "v:" << v << ", w:" << w << ", vR: " << vR << std::endl;
 
     // Bound from bounds.json
-    const double vR_constraint_lower = bounds_.lower_state_bounds.v_l - vR + C_vR_constraint*x_vec;
+    const double vR_constraint_lower = -bounds_.upper_state_bounds.v_u - vR + C_vR_constraint*x_vec;
     const double vR_constraint_upper = bounds_.upper_state_bounds.v_u - vR + C_vR_constraint*x_vec;
 
     return {C_vR_constraint,vR_constraint_lower,vR_constraint_upper};
