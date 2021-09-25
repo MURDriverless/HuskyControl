@@ -28,7 +28,7 @@
   "R_in" : 0.8,
   "R_out" : 0.8,
 
-  "max_dist_proj": 3.0,
+  "max_dist_proj": 10.0,
 
   "E_long" : 1.25,
   "E_eps" : 0.95,

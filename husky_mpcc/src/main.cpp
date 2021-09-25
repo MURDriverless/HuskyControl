@@ -29,9 +29,12 @@ using json = nlohmann::json;
 #include <chrono>
 #include <iomanip>
 
+// Statistics Print constants
 #define STATROW 13
 #define BARWIDTH 30
-#define NUMLAP 10
+
+// Lap constants
+#define NUMLAP 1 // Total number of laps before stopping
 
 // Time testing
 std::stack<clock_t> tictoc_stack;
@@ -53,7 +56,7 @@ double toc() {
 
 // Print Statistics
 void printStatistics(mpcc::State x0, Eigen::Vector4d command, mpcc::ArcLengthSpline track_, 
-    double lap_count, double t, Eigen::Vector2d error_count, Eigen::Vector2d wheel_constraint)
+    Eigen::Vector4d lapstats, double lapTime, double t, Eigen::Vector2d error_count, Eigen::Vector2d wheel_constraint)
 {
     // Decimals
     std::cout << std::fixed; 
@@ -71,9 +74,10 @@ void printStatistics(mpcc::State x0, Eigen::Vector4d command, mpcc::ArcLengthSpl
     std::cout << "Controller Status: " << std::endl;
     std::cout << "Solve time: " << t << "s, Hz: " << 1.0/t << std::endl;
     std::cout << "exitflag1 count: " << int(error_count(0)) << ", exitflag2 count: " << int(error_count(1)) << std::endl;
-    std::cout << "Constraint Violation count: " << int(wheel_constraint(0)) << ", Max Violation: " << wheel_constraint(1) << std::endl;
+    // std::cout << "Constraint Violation count: " << int(wheel_constraint(0)) << ", Max Violation: " << wheel_constraint(1) << std::endl;
+    std::cout << "Previous Lap time: " << lapTime << ", average: " << lapstats[1] << ", min: " << lapstats[2] << ", max: " << lapstats[3] << std::endl;
 
-    std::cout << "lap " << int(lap_count) << " progress: [";
+    std::cout << "lap " << int(lapstats(0)) << " progress: [";
     int pos = BARWIDTH * x0.s/track_.getLength();
     for (int i = 0; i < BARWIDTH; ++i) {
         if (i < pos) std::cout << "=";
@@ -106,23 +110,13 @@ int main(int argc, char **argv) {
 
     ROS_INFO_STREAM("FAST LAP CONTROL - MPCC - Initialized configuration.");
 
+    // Parameter loading
     PathToJson json_paths {jsonConfig["model_path"],
                            jsonConfig["cost_path"],
                            jsonConfig["bounds_path"],
                            jsonConfig["track_path"],
                            jsonConfig["normalization_path"]};
 
-    // std::cout << testSpline() << std::endl;
-    // std::cout << testArcLengthSpline(json_paths) << std::endl;
-
-    // std::cout << testIntegrator(json_paths) << std::endl;
-    // std::cout << testLinModel(json_paths) << std::endl;
-
-    // std::cout << testAlphaConstraint(json_paths) << std::endl;
-    // std::cout << testTireForceConstraint(json_paths) << std::endl;
-    // std::cout << testTrackConstraint(json_paths) << std::endl;
-
-    // std::cout << testCost(json_paths) << std::endl;
     BoundsParam boundParam = BoundsParam(jsonConfig["bounds_path"]);
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     Plotting plotter = Plotting(jsonConfig["Ts"],json_paths);
@@ -145,28 +139,34 @@ int main(int argc, char **argv) {
     // Set Ts
     ros::Rate rate(jsonConfig["Hz"]);
 
-    // Lap count
+    // Lap count and time
     double cur_s = 0;
-    int lap_count = 0;
+    Eigen::Vector4d fastlap_stats; // 0 for lap count, 1 for avg lap time, 2 for min lap time, 3 for max lap time
+    double lapTime[NUMLAP]; // all lap time
+    double startTime = 0;
 
     // Debug and stats
     int count = 0; // For debug and simplesim
     Eigen::Vector2d wheel_violate; // Wheel Constraint Testing, 0 for count, 1 for max
     double t = 0; // solve time and Hz
+    double max_t = 0; // solve time and Hz
     Eigen::Vector2d error_count; // count exit error 1 and 2
 
     ROS_INFO_STREAM("FAST LAP CONTROL STARTED.");
+    startTime = ros::Time::now().toSec(); // Start counting for slow lap
 
     while(ros::ok())
     {
         // Lap Count
-        if (lap_count == NUMLAP)
+        if (fastlap_stats(0) == NUMLAP) // Finished all 10 laps
         {
+            std::vector<double> plot_lapTime(std::begin(lapTime), std::end(lapTime));
             if (x0.s > 1) // Cross a little bit then stop
             {
                 controlNode.publishVel(0, 0); // Command desired velocity
                 if (comm)
                 {
+                    plotter.plotRun(log, track_xy, track_, plot_lapTime);
                     return 0; // Finish race
                 }
                 else
@@ -189,7 +189,8 @@ int main(int argc, char **argv) {
                     std::cout << "max wheel violation " << wheel_violate(1) << std::endl;
                     std::cout << "exitflag 1 count " << error_count(0) << std::endl;
                     std::cout << "exitflag 2 count " << error_count(1) << std::endl;
-                    plotter.plotSim(log,track_xy, track_);
+                    plotter.plotRun(log, track_xy, track_, plot_lapTime);
+                    plotter.plotSim(log, track_xy, track_);
                     return 0;
                 }
             }
@@ -231,6 +232,7 @@ int main(int argc, char **argv) {
         {
             controlNode.fastlapready = true; 
         }
+
         // Update 
         ros::spinOnce();
 
@@ -297,15 +299,33 @@ int main(int argc, char **argv) {
             // Print stats
             if (++count > (double)jsonConfig["Hz"]) // after 1s for clean print
             {
-                printStatistics(x0, command, track_, lap_count, t, error_count, wheel_violate);
+                printStatistics(x0, command, track_, fastlap_stats, lapTime[int(fastlap_stats(0))-1], t, error_count, wheel_violate);
             }
             
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
 
-            if(x0.s < cur_s && x0.s < 1) // Finished a lap, progress resets
+            if((50*x0.s) < cur_s && x0.s < 10) // Finished a lap, progress resets
             {
-                lap_count++;
+                if (fastlap_stats(2) < 1) // # Initialize
+                {
+                    fastlap_stats(2) = fastlap_stats(3);
+                }
+                lapTime[(int)fastlap_stats(0)] = ros::Time::now().toSec() - startTime;
+                fastlap_stats(0)++;
+                // Ignore first lap for avg count as its mixed with slow lap
+                if (fastlap_stats(0) > 1)
+                {
+                    double total_lapTime = 0;
+                    for (int i = 1; i < fastlap_stats(0); i ++)
+                    {
+                        fastlap_stats(2) = lapTime[i] < fastlap_stats(2) ? lapTime[i] : fastlap_stats(2);
+                        fastlap_stats(3) = lapTime[i] > fastlap_stats(3) ? lapTime[i] : fastlap_stats(3);
+                        total_lapTime += lapTime[i];
+                    }
+                    fastlap_stats(1) = total_lapTime/int(fastlap_stats(0)-1);
+                }
                 cur_s = 0;
+                startTime = ros::Time::now().toSec();
             }
             else
                 cur_s = x0.s; // Save new progress

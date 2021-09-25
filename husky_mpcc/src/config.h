@@ -36,7 +36,7 @@ namespace mpcc{
 #define NPC 3 // Number of polytopic constraints
 #define NS 1 // Number of slack variables
 
-static constexpr int N = 100;
+static constexpr int N = 40;
 static constexpr double INF = 1E5;
 static constexpr int N_SPLINE = 5000;
 

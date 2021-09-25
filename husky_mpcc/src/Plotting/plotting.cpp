@@ -22,7 +22,7 @@ Plotting::Plotting(double Ts,PathToJson path)
 param_(Param(path.param_path))
 {
 }
-void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy) const
+void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy, const mpcc::ArcLengthSpline &track, const std::vector<double> plot_lapTime) const
 {
 
     std::vector<double> plot_xc(track_xy.X.data(),track_xy.X.data() + track_xy.X.size());
@@ -45,11 +45,10 @@ void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy
     std::vector<double> plot_dW;
     std::vector<double> plot_dVs;
 
-    std::vector<double> plot_alpha_f;
-    std::vector<double> plot_F_rx0;
-    std::vector<double> plot_F_ry0;
-    std::vector<double> plot_F_rx1;
-    std::vector<double> plot_F_ry1;
+    std::vector<double> plot_innerbound_x;
+    std::vector<double> plot_innerbound_y;
+    std::vector<double> plot_outerbound_x;
+    std::vector<double> plot_outerbound_y;
 
     for(MPCReturn log_i : log)
     {
@@ -59,27 +58,32 @@ void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy
         plot_v.push_back(log_i.mpc_horizon[0].xk.v);
         plot_w.push_back(log_i.mpc_horizon[0].xk.w);
         plot_s.push_back(log_i.mpc_horizon[0].xk.s);
+        plot_vs.push_back(log_i.mpc_horizon[0].xk.vs);
         
         plot_dV.push_back(log_i.mpc_horizon[0].uk.dV);
         plot_dW.push_back(log_i.mpc_horizon[0].uk.dW);
         plot_dVs.push_back(log_i.mpc_horizon[0].uk.dVs);
 
-        // double alpha_f = model_.getSlipAngleFront(log_i.mpc_horizon[0].xk);
-        // TireForces F_r0 = model_.getForceRear(log_i.mpc_horizon[0].xk);
-        // TireForces F_r1 = model_.getForceRear(log_i.mpc_horizon[1].xk);
-        // plot_alpha_f.push_back(alpha_f);
-        // plot_F_rx0.push_back(F_r0.F_x);
-        // plot_F_ry0.push_back(F_r0.F_y);
-        // plot_F_rx1.push_back(F_r1.F_x);
-        // plot_F_ry1.push_back(F_r1.F_y);
-    }
+        // given arc length s and the track -> compute linearized track constraints
+        double s = log_i.mpc_horizon[0].xk.s;
 
-    std::vector<double> plot_eps_x;
-    std::vector<double> plot_eps_y;
-    for(double t = 0; t<2*M_PI;t+=0.1)
-    {
-        plot_eps_x.push_back(cos(t)*param_.Dr*param_.e_eps);
-        plot_eps_y.push_back(sin(t)*param_.Dr*1./param_.e_long*param_.e_eps);
+        // X-Y point of the center line
+        Eigen::Vector2d pos_center = track.getPostion(s);
+        Eigen::Vector2d d_center   = track.getDerivative(s);
+        // Tangent of center line at s
+        Eigen::Vector2d tan_center = {-d_center(1),d_center(0)};
+
+        // inner and outer track boundary given left and right width of track
+        Eigen::Vector2d pos_outer = pos_center + param_.r_out*tan_center;
+        Eigen::Vector2d pos_inner = pos_center - param_.r_in*tan_center;
+
+        // inner estimated boundary
+        plot_innerbound_x.push_back(pos_inner(0));
+        plot_innerbound_y.push_back(pos_inner(1));
+
+        // outer estimated boundary
+        plot_outerbound_x.push_back(pos_outer(0));
+        plot_outerbound_y.push_back(pos_outer(1));
     }
 
     plt::figure(1);
@@ -87,25 +91,22 @@ void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy
     plt::plot(plot_xi,plot_yi,"k-");
     plt::plot(plot_xo,plot_yo,"k-");
     plt::plot(plot_x,plot_y,"b-");
+    plt::plot(plot_innerbound_x,plot_innerbound_y,"r-");
+    plt::plot(plot_outerbound_x,plot_outerbound_y,"r-");
     plt::axis("equal");
     plt::xlabel("X [m]");
     plt::ylabel("Y [m]");
+
     plt::figure(2);
-    plt::subplot(3,2,1);
+    plt::subplot(3,1,1);
     plt::plot(plot_x);
     plt::ylabel("X [m]");
-    plt::subplot(3,2,2);
+    plt::subplot(3,1,2);
     plt::plot(plot_y);
     plt::ylabel("Y [m]");
-    plt::subplot(3,2,3);
+    plt::subplot(3,1,3);
     plt::plot(plot_th);
     plt::ylabel("theta [rad]");
-    plt::subplot(3,2,4);
-    plt::plot(plot_v);
-    plt::ylabel("v_x [m/s]");
-    plt::subplot(3,2,5);
-    plt::plot(plot_w);
-    plt::ylabel("w [rad/s]");
 
     plt::figure(3);
     plt::subplot(3,1,1);
@@ -117,6 +118,9 @@ void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy
     plt::subplot(3,1,3);
     plt::plot(plot_vs);
     plt::ylabel("v_s [m/s]");
+    plt::subplot(4,1,4);
+    plt::plot(plot_lapTime);
+    plt::ylabel("lap time [s]");
 
     plt::figure(4);
     plt::subplot(3,1,1);
@@ -129,22 +133,7 @@ void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy
     plt::plot(plot_dVs);
     plt::ylabel("dot{v_s} [m/s^2]");
 
-    plt::figure(5);
-    plt::plot(plot_s);
-    plt::ylabel("s [m]");
-
-    // plt::figure(6);
-    // plt::subplot(1,2,1);
-    // plt::plot(plot_alpha_f);
-    // plt::ylabel("alpha_f [rad]");
-    // plt::subplot(1,2,2);
-    // plt::plot(plot_F_ry0,plot_F_rx0);
-    // plt::plot(plot_F_ry1,plot_F_rx1);
-    // plt::plot(plot_eps_x,plot_eps_y);
-    // plt::axis("equal");
-    // plt::xlabel("F_y [N]");
-    // plt::ylabel("F_x [N]");
-    // plt::show();
+    plt::show();
 
 }
 void Plotting::plotSim(const std::list<MPCReturn> &log, const TrackPos &track_xy, const mpcc::ArcLengthSpline &track) const
