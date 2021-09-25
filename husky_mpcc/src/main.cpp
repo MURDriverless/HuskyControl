@@ -34,7 +34,7 @@ using json = nlohmann::json;
 #define BARWIDTH 30
 
 // Lap constants
-#define NUMLAP 1 // Total number of laps before stopping
+#define NUMLAP 10 // Total number of laps before stopping
 
 // Time testing
 std::stack<clock_t> tictoc_stack;
