@@ -119,7 +119,7 @@ void Plotting::plotRun(const std::list<MPCReturn> &log, const TrackPos &track_xy
     plt::plot(plot_vs);
     plt::ylabel("v_s [m/s]");
     plt::subplot(4,1,4);
-    plt::plot(plot_lapTime);
+    plt::plot(plot_lapTime, "*");
     plt::ylabel("lap time [s]");
 
     plt::figure(4);
