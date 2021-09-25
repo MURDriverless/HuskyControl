@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
     bool skip = atoi(argv[2]);
 
     using namespace mpcc;
+    // CHANGE HERE TO CORRECT PATH & ALSO IN Params/config.json
     std::ifstream iConfig("/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/config.json");
     json jsonConfig;
     iConfig >> jsonConfig;
@@ -301,15 +302,15 @@ int main(int argc, char **argv) {
             {
                 printStatistics(x0, command, track_, fastlap_stats, lapTime[int(fastlap_stats(0))-1], t, error_count, wheel_violate);
             }
-            
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
-
+            
+            // Lap stats
+            if (fastlap_stats(2) < 1) // # Initialize
+            {
+                fastlap_stats(2) = fastlap_stats(3);
+            }
             if((50*x0.s) < cur_s && x0.s < 10) // Finished a lap, progress resets
             {
-                if (fastlap_stats(2) < 1) // # Initialize
-                {
-                    fastlap_stats(2) = fastlap_stats(3);
-                }
                 lapTime[(int)fastlap_stats(0)] = ros::Time::now().toSec() - startTime;
                 fastlap_stats(0)++;
                 // Ignore first lap for avg count as its mixed with slow lap
