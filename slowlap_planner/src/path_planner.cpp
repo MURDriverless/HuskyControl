@@ -356,6 +356,8 @@ void PathPlanner::addFirstCentrePoints()
 		(left_cones.front()->position.x + right_cones.front()->position.x) / 2,
 		(left_cones.front()->position.y + right_cones.front()->position.y) / 2
 	);
+	centre_points.back().cone1 = left_cones.front();
+	centre_points.back().cone2 = right_cones.front();
 	left_cones.front()->paired++;
 	left_cones.front()->mapped++;
 	right_cones.front()->paired++;
