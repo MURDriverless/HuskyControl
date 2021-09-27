@@ -17,6 +17,14 @@ A simple unicycle model is used in this version
 ### Vehicle/Actuation Limit
 ![vlimit](https://user-images.githubusercontent.com/78944454/129431821-b8603b5a-1c20-4a58-87b6-585d4d36f1f6.png)
 
+![vl_vr_constraint](https://user-images.githubusercontent.com/78944454/134853806-f71d7ad8-9aea-4025-b8fe-c3420426db04.png)
+
+Note that to simulate controller's ability to deal with unmodelled dynamics, the vlimit is changed to 15m/s in this version. 
+
+To make Husky go fast, go `/opt/ros/<distro>/share/husky_control/config` and edit control.yaml. 
+
+The setting used is max_v = 15, max_a = 10
+
 ### Additional Constraints
 ![w_constraint](https://user-images.githubusercontent.com/78944454/129431906-9bae518b-8d8c-44fb-8de1-f1004c24489f.png)
 
@@ -40,10 +48,11 @@ A simple unicycle model is used in this version
     <gazebo_ros gazebo_model_path="${prefix}/models"/>
   </export>
 ```
-6. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
-7. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
-8. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch` and it'll launch the Husky running in eufs_track.
-9. You can also do `roslaunch husky_mpcc husky_mpcc.launch map:="trackname"` to try other maps, check the launch file for more details.
+6. Steps below detail how you can import a custom map, example given is the standard eufs_track from [mursim package](https://github.com/MURDriverless/mursim).
+6.1. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
+6.2. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
+6.3. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch map:='husky_eufs` and it'll launch the Husky running in eufs_track, defaults to empty world.
+6.4. Likewise, you can also do `roslaunch husky_mpcc husky_mpcc.launch map:="trackname"` to try other maps, check the launch file for more details.
 
 ### Issues with package building
 You may want to try and build the package from scratch, follow these steps.
