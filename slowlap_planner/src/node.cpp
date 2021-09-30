@@ -126,6 +126,8 @@ void PlannerNode::SlowLapFinished()
         ConeX.push_back(cn.position.x);
         ConeY.push_back(cn.position.y);
     }
+    ConeX.push_back(Left.front().position.x);
+    ConeY.push_back(Left.front().position.y);
     map.x_o = ConeX;
     map.y_o = ConeY;
     ConeX.clear();
@@ -138,6 +140,8 @@ void PlannerNode::SlowLapFinished()
         ConeX.push_back(cn.position.x);
         ConeY.push_back(cn.position.y);
     }
+    ConeX.push_back(Right.front().position.x);
+    ConeY.push_back(Right.front().position.y);
     map.x_i = ConeX;
     map.y_i = ConeY;
 
