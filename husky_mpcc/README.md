@@ -49,9 +49,13 @@ The setting used is max_v = 15, max_a = 10
   </export>
 ```
 6. Steps below detail how you can import a custom map, example given is the standard eufs_track from [mursim package](https://github.com/MURDriverless/mursim).
+
 6.1. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
+
 6.2. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
-6.3. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch map:='husky_eufs` and it'll launch the Husky running in eufs_track, defaults to empty world.
+
+6.3. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch map:='husky_eufs` and it'll launch the Husky running in eufs_track, currently it defaults to empty world if no map argument is given
+
 6.4. Likewise, you can also do `roslaunch husky_mpcc husky_mpcc.launch map:="trackname"` to try other maps, check the launch file for more details.
 
 ### Issues with package building
