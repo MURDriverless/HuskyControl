@@ -66,7 +66,7 @@ void printStatistics(mpcc::State x0, Eigen::Vector4d command, mpcc::ArcLengthSpl
     std::cout << "x: " << x0.X << std::endl;
     std::cout << "y: " << x0.Y << std::endl;
     std::cout << "theta: " << x0.th << std::endl;
-    std::cout << "s: " << x0.s << std::endl;
+    std::cout << "s: " << x0.s << ", max length: " << track_.getLength() << std::endl;
     std::cout << "v: " << command(0) << std::endl;
     std::cout << "w: " << command(1) << std::endl;
     std::cout << "vL: " << command(2) << std::endl;
@@ -201,6 +201,7 @@ int main(int argc, char **argv) {
         {
             if (count > jsonConfig["n_sim"])
             {
+                std::vector<double> plot_lapTime(std::begin(lapTime), std::end(lapTime));
                 controlNode.publishVel(0, 0);
                 controlNode.fastlapready = false; // end fast lap
                 double mean_time = 0.0;
@@ -220,6 +221,7 @@ int main(int argc, char **argv) {
                 std::cout << "max wheel violation " << wheel_violate(1) << std::endl;
                 std::cout << "exitflag 1 count " << error_count(0) << std::endl;
                 std::cout << "exitflag 2 count " << error_count(1) << std::endl;
+                plotter.plotRun(log, track_xy, track_, plot_lapTime);
                 plotter.plotSim(log,track_xy, track_);
                 return 0;
             }
