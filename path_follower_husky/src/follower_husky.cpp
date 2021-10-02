@@ -84,6 +84,7 @@ int HuskyFollower::launchPublishers()
 {
     pub_control = nh.advertise<geometry_msgs::Twist>(CMDVEL_TOPIC, 1);
     pub_path_viz = nh.advertise<nav_msgs::Path>(PATH_VIZ_TOPIC2, 1);
+    pub_goalPt = nh.advertise<visualization_msgs::Marker>(GOALPT_VIZ_TOPIC, 1);
 }
 
 //standard ROS func. gets transition msg from fast lap
@@ -184,6 +185,36 @@ void HuskyFollower::pushPathViz()
 
     path_viz_msg.poses = poses;
     pub_path_viz.publish(path_viz_msg);
+
+    // visualise goal point
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = FRAME;
+    marker.header.stamp = ros::Time();
+    marker.header.seq = index;
+    marker.ns = "my_namespace";
+    marker.id = index;
+    marker.type = visualization_msgs::Marker::SPHERE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.lifetime = ros::Duration(0.05);
+    marker.pose.position.x = currentGoalPoint.x;
+    marker.pose.position.y = currentGoalPoint.y;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.35;
+    marker.scale.y = 0.35;
+    marker.scale.z = 0.35;
+
+    
+    // alpha and RGB settings
+    // color.a is opacity, 0=invisible
+    marker.color.a = 1;
+    marker.color.r = 0.0;
+    marker.color.g = 1.0;
+    marker.color.b = 0.0;
+
+    pub_goalPt.publish(marker);
 }
 
 //publish actuation control commands
@@ -350,7 +381,7 @@ void HuskyFollower::generateSplines()
         
         int temp = (centre_points.size() - SPLINE_N )/ STEPSIZE;
         centre_splined.assign(centre_splined.begin(),centre_splined.begin()+ temp);  //erase the last N points, then replace with new points
-        for (double i = 0; i < T.size(); i += STEPSIZE)
+        for (double i = 0; i < xp.size(); i += STEPSIZE)
         {
             centre_splined.emplace_back(sx(i),sy(i));
         }
@@ -377,7 +408,7 @@ void HuskyFollower::generateSplines()
         sy.set_points(T, yp);
 
         centre_splined.clear(); //erase centre_splined and replace with new points
-        for (double i = 0; i < T.size(); i += STEPSIZE)
+        for (double i = 0; i < xp.size(); i += STEPSIZE)
         {
             centre_splined.emplace_back(sx(i),sy(i));
         }
