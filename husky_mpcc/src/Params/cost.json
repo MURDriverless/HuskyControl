@@ -5,13 +5,13 @@
 
   "qMu": 1E0,
 
-  "qW" : 3E0,
+  "qW" : 1E0,
 
   "qBeta" : 5E0,
   "betaKin": 1,
 
   "rV" : 1E-2,
-  "rW" : 1E-2,
+  "rW" : 1E0,
   "rVs" : 1E-5,
 
   "rdV" : 1E-2,
