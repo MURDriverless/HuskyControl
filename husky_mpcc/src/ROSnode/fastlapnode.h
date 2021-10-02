@@ -35,6 +35,7 @@
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
 #define TRANSITION_TOPIC "/mur/control/transition"
 #define RVIZ_TOPIC "/mpcc_RVIZ_topic"
+#define RVIZ_FRAME "odom" // name of fixed frame in RVIZ
 
 class FastLapControlNode {
     private:

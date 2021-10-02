@@ -261,7 +261,7 @@ void FastLapControlNode::publishRVIZ(const std::array<mpcc::OptVariables,mpcc::N
     // Initialize RVIZ Line Strip msg 
     ros::Time current_time = ros::Time::now();
     visualization_msgs::Marker inner_boundary, outer_boundary, predict_path;
-    inner_boundary.header.frame_id = outer_boundary.header.frame_id = predict_path.header.frame_id = "odom";
+    inner_boundary.header.frame_id = outer_boundary.header.frame_id = predict_path.header.frame_id = RVIZ_FRAME;
     
     // For Inner/Outer Boundary
     // inner_boundary.header.frame_id = outer_boundary.header.frame_id = "mpcc_boundary";
