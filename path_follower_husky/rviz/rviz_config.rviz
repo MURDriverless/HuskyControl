@@ -21,7 +21,7 @@ Panels:
         - /MarkerArray2
         - /PathAngles1
       Splitter Ratio: 0.49492400884628296
-    Tree Height: 363
+    Tree Height: 643
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -477,11 +477,19 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /mur/planner/path_marks
       Name: PathAngles
       Namespaces:
         {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /mur/follower/goatpt_viz
+      Name: GoalPoint
+      Namespaces:
+        my_namespace: true
       Queue Size: 100
       Value: true
   Enabled: true

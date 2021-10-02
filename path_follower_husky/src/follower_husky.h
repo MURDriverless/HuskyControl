@@ -7,6 +7,7 @@
 #include <tf/tf.h>                  // For Convertion from Quartenion to Euler
 #include "mur_common/path_msg.h"    // path msg from mur_common
 #include "mur_common/transition_msg.h"
+#include <visualization_msgs/Marker.h>      // rviz msgs
 #include <cmath>
 #include <sstream>
 #include <string>
@@ -40,14 +41,15 @@
 #define V_CONST 1.0                  // constant velocity 1m/s (for now)
 #define MAX_V 3                    // for Husky, test only, should be 1m/s to match mur car
 #define MAX_W 30                     // for Husky, angular velo in degrees
-#define HZ 30                        // ROS spin frequency (can increase to 20)
-
+#define HZ 20                        // ROS spin frequency (can increase to 20)
+#define FRAME "odom"
 // ROS topics
 #define ODOM_TOPIC "/odometry/filtered"                     //"/mur/slam/Odom" in murSim
 #define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"   
 #define PATH_TOPIC "/mur/planner/path"
 #define PATH_VIZ_TOPIC2 "/mur/follower/path_viz"
 #define FASTLAP_READY_TOPIC "/mur/control/transition"
+#define GOALPT_VIZ_TOPIC "/mur/follower/goatpt_viz"
 
 bool DEBUG = false;              //to show debug messages in terminal, switch to false to turn off
 
@@ -70,6 +72,7 @@ private:
     ros::Publisher pub_steer;
     ros::Publisher pub_target;
     ros::Publisher pub_path_viz;
+    ros::Publisher pub_goalPt;
 
     double max_v;
     double max_w;
