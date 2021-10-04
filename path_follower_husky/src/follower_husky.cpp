@@ -30,6 +30,7 @@ HuskyFollower::HuskyFollower(ros::NodeHandle n, double max_v, double max_w)
     }
     
     waitForMsgs();
+    currentGoalPoint.updatePoint(PathPoint(car_x,car_y));
 
     ROS_INFO_STREAM("[FOLLOWER] follower initialized, publisher and subscriber launched!");
 }
@@ -55,6 +56,7 @@ void HuskyFollower::spin()
     if (fastLapReady)
         shut_down();
 
+    
     ros::Rate(HZ).sleep();
 }
 
@@ -74,8 +76,8 @@ void HuskyFollower::clearVars()
 //standard ROS func
 int HuskyFollower::launchSubscribers()
 {
+    sub_path = nh.subscribe(PATH_TOPIC, 1, &HuskyFollower::pathCallback, this);
     sub_odom = nh.subscribe(ODOM_TOPIC, 1, &HuskyFollower::odomCallback, this);
-	sub_path = nh.subscribe(PATH_TOPIC, 1, &HuskyFollower::pathCallback, this);
     sub_transition = nh.subscribe(FASTLAP_READY_TOPIC, 1, &HuskyFollower::transitionCallback, this);
 }
 
@@ -104,6 +106,8 @@ void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
        initYaw = car_yaw;
        initialised = true;
        currentGoalPoint.updatePoint(centre_points.back());
+       if (DEBUG) std::cout<<"[FOLLOWER] initial goal point is: ("<<currentGoalPoint.x<<", "<<currentGoalPoint.y<<") "<<std::endl;
+
     }
     car_x = msg.pose.pose.position.x;
     car_y = msg.pose.pose.position.y;
@@ -158,6 +162,7 @@ void HuskyFollower::pathCallback(const mur_common::path_msg &msg)
         plannerComplete = true;
 
     path_msg_received = true;
+    if (DEBUG) std::cout<<"[FOLLOWER] Path points received: "<<centre_points.size()<<std::endl;
 }
 
 
@@ -255,6 +260,14 @@ void HuskyFollower::steeringControl()
     // }
 
     double dist = getDistFromCar(currentGoalPoint);
+    while (dist > 50)
+    {
+        currentGoalPoint.updatePoint(PathPoint(car_x,car_y));
+        dist = getDistFromCar(currentGoalPoint);
+
+    }
+        
+
     if (endOfLap)
     {
         // lin_velocity = 0;
@@ -482,7 +495,7 @@ void HuskyFollower::getGoalPoint()
         else
             index++;
     }
-    if (DEBUG) std::cout<<"[FOLLOWER] new goal point set" <<std::endl;
+    if (DEBUG) std::cout<<"[FOLLOWER] new goal point set ("<<currentGoalPoint.x<<", "<<currentGoalPoint.y<<") " <<std::endl;
     
     if (index == centre_splined.size()-1) //if at last index of centre_splined path
     {
