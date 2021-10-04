@@ -105,7 +105,7 @@ void HuskyFollower::odomCallback(const nav_msgs::Odometry &msg)
        initY = msg.pose.pose.position.y;
        initYaw = car_yaw;
        initialised = true;
-       currentGoalPoint.updatePoint(centre_points.back());
+       currentGoalPoint.updatePoint(PathPoint(initX,initY));
        if (DEBUG) std::cout<<"[FOLLOWER] initial goal point is: ("<<currentGoalPoint.x<<", "<<currentGoalPoint.y<<") "<<std::endl;
 
     }
