@@ -51,7 +51,7 @@
 #define FASTLAP_READY_TOPIC "/mur/control/transition"
 #define GOALPT_VIZ_TOPIC "/mur/follower/goatpt_viz"
 
-bool DEBUG = false;              //to show debug messages in terminal, switch to false to turn off
+bool DEBUG = true;              //to show debug messages in terminal, switch to false to turn off
 
 class HuskyFollower
 {
@@ -96,7 +96,7 @@ private:
 
     std::vector<PathPoint> centre_points;       // centre line points of race tack, from path planner
     std::vector<PathPoint> centre_splined;      // splined centre line points, see func generateSpline()
-    PathPoint currentGoalPoint = PathPoint(car_x,car_y);
+    PathPoint currentGoalPoint;
 
     // temp vectors for splining
     std::vector<double> xp;
