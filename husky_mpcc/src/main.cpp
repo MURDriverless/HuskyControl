@@ -35,6 +35,7 @@ using json = nlohmann::json;
 
 // Lap constants
 #define NUMLAP 10 // Total number of laps before stopping
+#define SLOWLAP 1 // Total number of slow laps
 
 // Time testing
 std::stack<clock_t> tictoc_stack;
@@ -147,7 +148,8 @@ int main(int argc, char **argv) {
     double startTime = 0;
 
     // Debug and stats
-    int count = 0; // For debug and simplesim
+    int simcount = 0; // Set max number of simulation
+    int count = 0; // For no comms lap time stats
     Eigen::Vector2d wheel_violate; // Wheel Constraint Testing, 0 for count, 1 for max
     double t = 0; // solve time and Hz
     double max_t = 0; // solve time and Hz
@@ -168,6 +170,7 @@ int main(int argc, char **argv) {
                 if (comm)
                 {
                     plotter.plotRun(log, track_xy, track_, plot_lapTime);
+                    plotter.plotSim(log, track_xy, track_);
                     return 0; // Finish race
                 }
                 else
@@ -184,7 +187,7 @@ int main(int argc, char **argv) {
                     // std::cout << "mean nmpc time " << mean_time/double(jsonConfig["n_sim"]) << std::endl;
                     for (int i = 0; i < STATROW+1; i++)
                         std::cout << std::endl;
-                    std::cout << "mean nmpc time " << mean_time/count << std::endl;
+                    std::cout << "mean nmpc time " << mean_time/simcount << std::endl;
                     std::cout << "max nmpc time " << max_time << std::endl;
                     std::cout << "wheel violation count " << wheel_violate(0) << std::endl;
                     std::cout << "max wheel violation " << wheel_violate(1) << std::endl;
@@ -199,7 +202,7 @@ int main(int argc, char **argv) {
 
         if (!comm) // Simple sim test without Gazebo/RVIZ
         {
-            if (count > jsonConfig["n_sim"])
+            if (simcount > jsonConfig["n_sim"])
             {
                 std::vector<double> plot_lapTime(std::begin(lapTime), std::end(lapTime));
                 controlNode.publishVel(0, 0);
@@ -215,7 +218,7 @@ int main(int argc, char **argv) {
                 // std::cout << "mean nmpc time " << mean_time/double(jsonConfig["n_sim"]) << std::endl;
                 for (int i = 0; i < STATROW+1; i++)
                     std::cout << std::endl;
-                std::cout << "mean nmpc time " << mean_time/count << std::endl;
+                std::cout << "mean nmpc time " << mean_time/simcount << std::endl;
                 std::cout << "max nmpc time " << max_time << std::endl;
                 std::cout << "wheel violation count " << wheel_violate(0) << std::endl;
                 std::cout << "max wheel violation " << wheel_violate(1) << std::endl;
@@ -240,36 +243,37 @@ int main(int argc, char **argv) {
         ros::spinOnce();
 
         // Fast Lap Control is ready
-        if (firstRun && controlNode.getFastLapReady())
+        if (controlNode.getFastLapReady())
         {
-            // ROS_INFO("RUNNING FIRST RUN");
-            if (skip)
+            if (firstRun)
             {
-                track = Track(json_paths.track_path);
-                track_xy = track.getTrack();
-                const double phi_0 = std::atan2(track_xy.Y(1) - track_xy.Y(0),track_xy.X(1) - track_xy.X(0));
-                x0.set(track_xy.X(0),track_xy.Y(0),phi_0,0,0,0,0);
-                // x0.set(0,0,0,0.05,0,0,0.05);
-            }
-            else
-            {
-                track = controlNode.generateTrack();
-                track_xy = track.getTrack();
-                x0 = controlNode.initialize();
-            }
-            
-            track_ = mpc.setTrack(track_xy.X,track_xy.Y);
+                // ROS INFO
+                ROS_INFO_STREAM("FAST LAP CONTROL IS READY TO GO.");
 
-            ROS_INFO("Fast Lap Starting State:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w); 
-            
-            firstRun = false;
-            count = 0;
-        }
+                if (skip)
+                {
+                    track = Track(json_paths.track_path);
+                    track_xy = track.getTrack();
+                    const double phi_0 = std::atan2(track_xy.Y(1) - track_xy.Y(0),track_xy.X(1) - track_xy.X(0));
+                    x0.set(track_xy.X(0),track_xy.Y(0),phi_0,0,0,0,0);
+                    // x0.set(0,0,0,0.05,0,0,0.05);
+                }
+                else
+                {
+                    track = controlNode.generateTrack();
+                    track_xy = track.getTrack();
+                    x0 = controlNode.initialize();
+                }
+                
+                track_ = mpc.setTrack(track_xy.X,track_xy.Y);
 
-        else if (controlNode.getFastLapReady())     
-        {
-            // ROS_INFO("States:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w);
-            // ROS_INFO("Constraint State:\nvL:%lf\nvR:%lf\n", (x0.v-0.5*x0.w*0.555), (x0.v+0.5*x0.w*0.555));
+                ROS_INFO("Fast Lap Starting State:\nx:%lf\ny:%lf\ntheta:%lf\ns:%lf\nv:%lf\nw:%lf.", x0.X, x0.Y, x0.th, x0.s, x0.v, x0.w); 
+                
+                firstRun = false;
+                simcount = 0;
+                count = 0;
+            }
+
             tic();
             MPCReturn mpc_sol = mpc.runMPC(x0, error_count); // Updates s
             t = toc();
@@ -307,33 +311,44 @@ int main(int argc, char **argv) {
             controlNode.publishRVIZ(mpc_sol.mpc_horizon, track_); // Publish RVIZ
             
             // Lap stats
-            if (fastlap_stats(2) < 1) // # Initialize
-            {
-                fastlap_stats(2) = fastlap_stats(3);
-            }
             if((50*x0.s) < cur_s && x0.s < 10) // Finished a lap, progress resets
             {
-                lapTime[(int)fastlap_stats(0)] = ros::Time::now().toSec() - startTime;
+                if(comm) // running Gazebo, rate.sleep() in effect, can use real time
+                {
+                    lapTime[(int)fastlap_stats(0)] = ros::Time::now().toSec() - startTime;
+                }
+                else // have to manually determine lap time taking into consideration controller sampling time
+                {
+                    lapTime[(int)fastlap_stats(0)] = count * (double)jsonConfig["Ts"];
+                    count = 0;
+                }
                 fastlap_stats(0)++;
                 // Ignore first lap for avg count as its mixed with slow lap
-                if (fastlap_stats(0) > 1)
+                if (fastlap_stats(0) > SLOWLAP)
                 {
                     double total_lapTime = 0;
-                    for (int i = 1; i < fastlap_stats(0); i ++)
+                    for (int i = SLOWLAP; i < fastlap_stats(0); i++)
                     {
                         fastlap_stats(2) = lapTime[i] < fastlap_stats(2) ? lapTime[i] : fastlap_stats(2);
                         fastlap_stats(3) = lapTime[i] > fastlap_stats(3) ? lapTime[i] : fastlap_stats(3);
                         total_lapTime += lapTime[i];
                     }
+                    if (fastlap_stats(2) < 1) // # Initialize
+                    {
+                        fastlap_stats(2) = fastlap_stats(3);
+                    }
                     fastlap_stats(1) = total_lapTime/int(fastlap_stats(0)-1);
+                    count = 0;
                 }
                 cur_s = 0;
                 startTime = ros::Time::now().toSec();
             }
             else
+            {
                 cur_s = x0.s; // Save new progress
+            }
+           
         }
-
         if(comm)
         {
             rate.sleep(); // Wait until Ts
