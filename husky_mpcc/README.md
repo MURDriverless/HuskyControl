@@ -1,6 +1,6 @@
 # Model Predictive Contouring Control
 <p align="center">
-  <img width="800" height="529" src="https://user-images.githubusercontent.com/78944454/137705480-982ca6ab-ee5c-4d69-8c5d-9411866573f3.gif">
+  <img width="800" height="529" src="https://user-images.githubusercontent.com/78944454/137711457-6073b01d-b5d1-4f3f-905a-70c860ee6a46.gif">
 </p>
 
 # Disclaimer
