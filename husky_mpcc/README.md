@@ -1,4 +1,7 @@
 # Model Predictive Contouring Control
+<p align="center">
+  <img width="800" height="529" src="https://user-images.githubusercontent.com/78944454/137705480-982ca6ab-ee5c-4d69-8c5d-9411866573f3.gif">
+</p>
 
 # Disclaimer
 This branch is heavily based upon [Alex Liniger's MPCC](https://github.com/alexliniger/MPCC). It is using the version from the fullsize branch, commit 302e12a on 15 Jun 2021.
