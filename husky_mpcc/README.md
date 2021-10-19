@@ -1,6 +1,7 @@
 # Model Predictive Contouring Control
 <p align="center">
-  <img width="800" height="529" src="https://user-images.githubusercontent.com/78944454/137711457-6073b01d-b5d1-4f3f-905a-70c860ee6a46.gif">
+  <img width="454" height="300" src="https://user-images.githubusercontent.com/78944454/137711457-6073b01d-b5d1-4f3f-905a-70c860ee6a46.gif">
+  <img width="300" height="300" src="https://user-images.githubusercontent.com/78944454/137818522-85b7dd92-eb84-40b6-b4f5-c46caab0f031.png">  
 </p>
 
 # Disclaimer
@@ -12,24 +13,21 @@ Main changes:
 3. Slightly faster solve time for Discretization code
 
 ## Husky Dynamics
-A simple unicycle model is used in this version
+A simple kinematic unicycle model is used in this version
+<p align="center">
+  <img width="200" height="200" src="https://user-images.githubusercontent.com/78944454/137826421-5731ba0a-432e-43ac-8b5e-f052e6f884a0.png">
+</p>
 
-### States
-![unicycle](https://user-images.githubusercontent.com/78944454/129431697-3a2fe54c-337d-4d4b-92cb-442be8bf3487.png)
-
-### Vehicle/Actuation Limit
-![vlimit](https://user-images.githubusercontent.com/78944454/129431821-b8603b5a-1c20-4a58-87b6-585d4d36f1f6.png)
-
-![vl_vr_constraint](https://user-images.githubusercontent.com/78944454/134853806-f71d7ad8-9aea-4025-b8fe-c3420426db04.png)
+<p align="center">
+  <img width="341" height="186" src="https://user-images.githubusercontent.com/78944454/137827369-229ead02-1558-4590-975f-6a32ea3c71b3.png">
+  <img width="450" height="186" src="https://user-images.githubusercontent.com/78944454/137827921-4ea7488e-306d-4648-a828-8cb6853f71db.png">
+</p>
 
 Note that to simulate controller's ability to deal with unmodelled dynamics, the vlimit is changed to 15m/s in this version. 
 
 To make Husky go fast, go `/opt/ros/<distro>/share/husky_control/config` and edit control.yaml. 
 
 The setting used is max_v = 15, max_a = 10
-
-### Additional Constraints
-![w_constraint](https://user-images.githubusercontent.com/78944454/129431906-9bae518b-8d8c-44fb-8de1-f1004c24489f.png)
 
 ## Run in ROS, with simple sim
 1. Clone this package as a separate package to build
