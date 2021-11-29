@@ -3,7 +3,7 @@
  * some of these are copied from Joseph (MURauto20) and modified a bit 
  * see header file for description of member variables
  * 
- * author: Aldrei (MURauto21)
+ * author: Aldrei Recamadas (MURauto21)
 **/
 
 
@@ -315,7 +315,7 @@ void PlannerNode::coneCallback(const mur_common::cone_msg &msg)
     }
 }
 
-// pablish markers to rviz
+// publish markers to rviz
 void PlannerNode::pushMarkers()
 {
     visualization_msgs::MarkerArray marks;
@@ -392,9 +392,9 @@ void PlannerNode::setMarkerProperties(visualization_msgs::Marker *marker,PathPoi
     marker->points.push_back(p1);
     marker->points.push_back(p2);
 
-    marker->scale.x = 0.3;
-    marker->scale.y = 0.3;
-    marker->scale.z = 0.7;
+    marker->scale.x = 0.1;
+    marker->scale.y = 0.1;
+    marker->scale.z = 0.1;
 
     // alpha and RGB settings
     // color.a is opacity, 0: invisible

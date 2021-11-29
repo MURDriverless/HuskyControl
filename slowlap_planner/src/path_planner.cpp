@@ -7,7 +7,7 @@
  * 
  * for future improvement: generate velocity reference as well
  * 
- * author: Aldrei (MURauto21)
+ * author: Aldrei Recamadas (MURauto21)
  **/
 
 #include "path_planner.h"
@@ -99,6 +99,8 @@ void PathPlanner::update(std::vector<Cone> &new_cones, const float car_x, const 
 		resetTempConeVectors();
 	}
 }
+
+// sort path points by distance to a reference point
 void PathPlanner::sortPathPoints(std::vector<PathPoint>&cenPoin,PathPoint&refPoint)
 {
 	
@@ -274,7 +276,7 @@ void PathPlanner::addCentrePoints()
 	int c = 0;
 	for (int i = leftIndx; i < left_cones.size(); i++)
 	{
-		if (c==2) //so we only generate 2 new path points
+		if (c==3) //so we only generate 3 new path points
 			break;
 		// only generate points from cones that havent been passed by yet, or if paired less than 3 times
 		if((!left_cones[i]->passedBy)||(left_cones[i]->paired<3))
@@ -295,7 +297,7 @@ void PathPlanner::addCentrePoints()
 	c=0;
 	for (int i = rightIndx; i < right_cones.size(); i++)
 	{
-		if (c==2) //so we only generate 2 new path points
+		if (c==3) //so we only generate 3 new path points
 			break;
 		// only generate points from cones that havent been passed by yet, or if paired less than 3 times
 		if((!right_cones[i]->passedBy)||(right_cones[i]->paired<3))
@@ -836,7 +838,7 @@ void PathPlanner::sortAndPushCone(std::vector<Cone*> &cn)
 
 			// might need to add different weights for each cost later,
 			// but it works with equal weights for now
-			cn[i]->cost = (cost1*cost1) + (2*cost2*cost2) + (1.5*cost3*cost3);
+			cn[i]->cost = (W1*cost1*cost1) + (W2*cost2*cost2) + (W3*cost3*cost3);
 			
 		}
 
