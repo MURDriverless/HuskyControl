@@ -284,7 +284,7 @@ void HuskyFollower::steeringControl()
     if (endOfPath)
     {
         if (DEBUG) std::cout<<"[FOLLOWER] end of path triggered!"<<std::endl;
-        lin_velocity = 0.75 * max_v;  //slow down //Max says should not slow down
+        lin_velocity = 0.75 * max_v;  //slow down //Max says should not slow down/ velocity should be constant
         
         if (plannerComplete)//
         {
@@ -394,7 +394,7 @@ void HuskyFollower::generateSplines()
         
         int temp = (centre_points.size() - SPLINE_N )/ STEPSIZE;
         centre_splined.assign(centre_splined.begin(),centre_splined.begin()+ temp);  //erase the last N points, then replace with new points
-        for (double i = 0; i < xp.size(); i += STEPSIZE)
+        for (double i = 0; i < xp.size()-1; i += STEPSIZE)
         {
             centre_splined.emplace_back(sx(i),sy(i));
         }

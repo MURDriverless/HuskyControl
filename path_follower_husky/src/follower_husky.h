@@ -41,7 +41,7 @@
 #define V_CONST 1.0                  // constant velocity 1m/s (for now)
 #define MAX_V 3                    // for Husky, test only, should be 1m/s to match mur car
 #define MAX_W 30                     // for Husky, angular velo in degrees
-#define HZ 20                        // ROS spin frequency (can increase to 20)
+#define HZ 16                        // ROS spin frequency (can increase to 20)
 #define FRAME "odom"
 // ROS topics
 #define ODOM_TOPIC "/odometry/filtered"                     //"/mur/slam/Odom" in murSim
@@ -128,15 +128,15 @@ private:
     void publishCtrl();
     void pushPathViz(); 
 
-    void steeringControl();             // see cpp file for description
-    void generateSplines();             // see cpp file for description
+    void steeringControl();               // see cpp file for description
+    void generateSplines();               // see cpp file for description
     double getDistFromCar(PathPoint&);    // to compute distance of point to current car pose
     double getAngleFromCar(PathPoint&);   // to compute angle differene of a point to current car yaw 
     double calcDist(const PathPoint &p1, const PathPoint &p2);
-    void clearVars();                   // clear temporary variables, vectors
-    void getGoalPoint();                // see cpp file for description
+    void clearVars();                     // clear temporary variables, vectors
+    void getGoalPoint();                  // see cpp file for description
     double getSign(double&);  
-    void shut_down();                   // when slow lap is complete            
+    void shut_down();                     // when slow lap is complete            
 };
 
 

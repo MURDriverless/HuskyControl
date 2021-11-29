@@ -48,7 +48,7 @@
 #define SORTING_MARKER "/mur/planner/sortCones"
 #define PATH_MARKER "/mur/planner/path_marks"
 
-#define HZ 10   // publish frequency
+#define HZ 10   // subscribe/publish frequency
 
 typedef std::chrono::high_resolution_clock Clock;               // (MURauto20)
 typedef std::chrono::high_resolution_clock::time_point ClockTP; // (MURauto20)
