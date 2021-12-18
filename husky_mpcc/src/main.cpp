@@ -230,8 +230,7 @@ int main(int argc, char **argv) {
             }
             else
             {
-                count++;
-                // std::cout << "count: " << count << std::endl;
+                simcount++;
             }
         }
         if (skip) // Want start fast lap immediately
@@ -338,7 +337,6 @@ int main(int argc, char **argv) {
                         fastlap_stats(2) = fastlap_stats(3);
                     }
                     fastlap_stats(1) = total_lapTime/int(fastlap_stats(0)-1);
-                    count = 0;
                 }
                 cur_s = 0;
                 startTime = ros::Time::now().toSec();
