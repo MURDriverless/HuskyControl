@@ -4,7 +4,7 @@
   <img width="300" height="300" src="https://user-images.githubusercontent.com/78944454/137818522-85b7dd92-eb84-40b6-b4f5-c46caab0f031.png">  
 </p>
 
-# Disclaimer
+## Disclaimer
 This branch is heavily based upon [Alex Liniger's MPCC](https://github.com/alexliniger/MPCC). It is using the version from the fullsize branch, commit 302e12a on 15 Jun 2021.
 
 Main changes:
@@ -29,35 +29,12 @@ To make Husky go fast, go `/opt/ros/<distro>/share/husky_control/config` and edi
 
 The setting used is max_v = 15, max_a = 10
 
-## Run in ROS, with simple sim
-1. Clone this package as a separate package to build
-2. Run `sudo ./install.sh` to install dependencies into External folder. If it says file not found, try `sudo chmod +x install.sh`
-3. Change directory to reflect the directory you put the files in for `main.cpp` and `Params/config.json`
-4. `catkin build` then `source devel/setup.bash`
-5. `rosrun husky_mpcc husky_mpcc -0 -1`
-
-## To test EUFS/Small or other track in Gazebo Simulation (Using Husky Sim)
-1. Do above steps 1 to 3.
-2. Install [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky)
-3. Clone this package, then build it with `catkin build`
-4. Husky Sim can probably directly load models and world from mursim package, not sure how, so we'll do a bit of moving stuff around. For step 5 to 7, you may need `sudo chown -R user:group directory` to own the directories from ROOT. Replace user:group with your Linux user:group, directory as the folder that contains the file you need to modify or folder you're moving stuff to.
-5. Add the following lines to `/opt/ros/<distro>/share/husky_gazebo/package.xml` if they are not there
-```
-  <exec_depend>gazebo_ros</exec_depend>
-
-  <export>
-    <gazebo_ros gazebo_model_path="${prefix}/models"/>
-  </export>
-```
-6. Steps below detail how you can import a custom map, example given is the standard eufs_track from [mursim package](https://github.com/MURDriverless/mursim).
-
-6.1. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
-
-6.2. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
-
-6.3. `catkin build` again, `source devel/setup.bash` in your workspace folder where you built the package, then `roslaunch husky_mpcc husky_mpcc.launch map:='husky_eufs` and it'll launch the Husky running in eufs_track, currently it defaults to empty world if no map argument is given
-
-6.4. Likewise, you can also do `roslaunch husky_mpcc husky_mpcc.launch map:="trackname"` to try other maps, check the launch file for more details.
+## Package set up and build
+1. Ensure [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky) are installed, take note of your ROS distro (Ubuntu 18.04 will use Melodic). 
+2. Clone this package to build, you may skip this step if you have cloned the entire HuskyControl package.
+3. Run `sudo ./install.sh` to install dependencies into External folder. If it says file not found, try `sudo chmod +x install.sh` first.
+4. Change directory to reflect the directory you put the files in for `main.cpp` and `Params/config.json`
+5. `catkin build` and it should work. Remember to `source devel/setup.bash` so your terminal can find the new packages.
 
 ### Issues with package building
 You may want to try and build the package from scratch, follow these steps.
@@ -65,6 +42,37 @@ You may want to try and build the package from scratch, follow these steps.
 2. Follow his instructions to build MPCC, verify if it works by running `./MPCC`
 3. Arrange the folders in the ROS template (all files in src, CMakeList.txt is at same level as src)
 4. Clone this repo, replace everything except for External folder.
+
+## Run in ROS, with SimpleSim
+1. `roscore` in a new terminal.
+2. `rosrun husky_mpcc husky_mpcc -0 -1` in the terminal that you ran `source devel/setup.bash` on.
+3. Alternatively, if you want to use a roslaunch command directly, you can do `roslaunch husky_mpcc husky_mpcc.launch gazebo:=0 rviz:=0 comm:=0 skip:=1`. Look at launch file for more details, but the arguments sets Gazebo and RVIZ to not run, the controller to not communicate with SLAM system, and to skip directly to Fast Lap.
+
+## Run full Autonomous Control Pipeline with HuskySim
+1. Ensure the whole HuskyControl package is able to build. Refer to specific package README for instructions if you face issues.
+2. `roslaunch husky_mpcc slow2fast.launch`. This will open up Gazebo and RVIZ as well.
+3. In a new terminal, do `source devel/setup.bash` then `rostopic pub /mur/slam/true_cones mur_common/cone_msg -f <directory to mapname.yaml>` to run a simulated cone position input from SLAM. For reference, if you opened the new terminal in the base workspace folder, you can replace `<directory to mapname.yaml>` with `src/HuskyControl/race_tracks/cones_big_map.yaml` to publish cone positions of the FSG 2018 race track.
+4. Voila, it works!
+
+## To test EUFS/Small or other track in Gazebo Simulation (Using Husky Sim)
+1. Husky Sim can probably directly load models and world from mursim package, not sure how, so we'll do a bit of moving stuff around. For step 5 to 7, you may need `sudo chown -R user:group directory` to own the directories from ROOT. Replace user:group with your Linux user:group, directory as the folder that contains the file you need to modify or folder you're moving stuff to.
+2. Add the following lines to `/opt/ros/<distro>/share/husky_gazebo/package.xml` if they are not there
+```
+  <exec_depend>gazebo_ros</exec_depend>
+
+  <export>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/>
+  </export>
+```
+3. Steps below detail how you can import a custom map, example given is the standard eufs_track from [mursim package](https://github.com/MURDriverless/mursim).
+
+3.1. From [mursim package](https://github.com/MURDriverless/mursim), copy `models` folder from `mursim_description` to `/opt/ros/<distro>/share/husky_gazebo/`
+
+3.2. From [mursim package](https://github.com/MURDriverless/mursim), copy `eufs_track.world` or any track you would like to test from `mursim_gazebo/worlds/` to `/opt/ros/<distro>/share/husky_gazebo/worlds`
+
+4. `catkin build` again, `source devel/setup.bash` in your base workspace folder where you built the mpcc package, then `roslaunch husky_mpcc husky_mpcc.launch map:='husky_eufs'` and it'll launch the Husky running in eufs_track, currently it defaults to empty world if no map argument is given.
+
+4.1. Likewise, you can also do `roslaunch husky_mpcc husky_mpcc.launch map:="trackname"` to try other maps, check the launch file for more details.
 
 ## To Do
 1. Test on more complex tracks.
