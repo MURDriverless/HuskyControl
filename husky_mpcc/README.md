@@ -44,14 +44,26 @@ You may want to try and build the package from scratch, follow these steps.
 4. Clone this repo, replace everything except for External folder.
 
 ## Run in ROS, with SimpleSim
-1. `roscore` in a new terminal.
-2. `rosrun husky_mpcc husky_mpcc -0 -1` in the terminal that you ran `source devel/setup.bash` on.
-3. Alternatively, if you want to use a roslaunch command directly, you can do `roslaunch husky_mpcc husky_mpcc.launch gazebo:=0 rviz:=0 comm:=0 skip:=1`. Look at launch file for more details, but the arguments sets Gazebo and RVIZ to not run, the controller to not communicate with SLAM system, and to skip directly to Fast Lap.
+1. Run `roscore` in a new terminal.
+2. In the terminal that you ran `source devel/setup.bash` on, do
+```
+rosrun husky_mpcc husky_mpcc -0 -1
+```
+3. Alternatively, if you want to use a roslaunch command directly and skip running `roscore` in a new terminal, you can use the following command. Look at launch file for more details, but essentially the arguments sets Gazebo and RVIZ to not run, the controller to not communicate with SLAM system, and to skip directly to Fast Lap.
+```
+roslaunch husky_mpcc husky_mpcc.launch gazebo:=0 rviz:=0 comm:=0 skip:=1
+```
 
 ## Run full Autonomous Control Pipeline with HuskySim
 1. Ensure the whole HuskyControl package is able to build. Refer to specific package README for instructions if you face issues.
-2. `roslaunch husky_mpcc slow2fast.launch`. This will open up Gazebo and RVIZ as well.
-3. In a new terminal, do `source devel/setup.bash` then `rostopic pub /mur/slam/true_cones mur_common/cone_msg -f <directory to mapname.yaml>` to run a simulated cone position input from SLAM. For reference, if you opened the new terminal in the base workspace folder, you can replace `<directory to mapname.yaml>` with `src/HuskyControl/race_tracks/cones_big_map.yaml` to publish cone positions of the FSG 2018 race track.
+2. Run the following to begin. It'll launch Gazebo and RViz as well.
+```
+roslaunch husky_mpcc slow2fast.launch
+``` 
+3. Open a new terminal at the base workspace, `source devel/setup.bash` then run the following command to simulate cone position input from SLAM. For reference, if you opened the new terminal in the base workspace folder, you can replace `<directory to mapname.yaml>` with `src/HuskyControl/race_tracks/cones_big_map.yaml` to publish cone positions of the FSG 2018 race track.
+```
+rostopic pub /mur/slam/true_cones mur_common/cone_msg -f <directory to mapname.yaml>
+``` 
 4. Voila, it works!
 
 ## To test EUFS/Small or other track in Gazebo Simulation (Using Husky Sim)
