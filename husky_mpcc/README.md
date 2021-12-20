@@ -5,7 +5,7 @@
 </p>
 
 ## Disclaimer
-This branch is heavily based upon [Alex Liniger's MPCC](https://github.com/alexliniger/MPCC). It is using the version from the fullsize branch, commit 302e12a on 15 Jun 2021.
+This branch is heavily based upon [Alex Liniger's MPCC](https://github.com/alexliniger/MPCC). It is using the version from the fullsize branch, commit 302e12a on 15 Jun 2021. Do not build this package together with [MURSim](https://github.com/MURDriverless/mursim) or you'll break HuskySim.
 
 Main changes:
 1. Using Unicycle Model, with Husky's own set of constraints
@@ -25,9 +25,7 @@ A simple kinematic unicycle model is used in this version
 
 Note that to simulate controller's ability to deal with unmodelled dynamics, the vlimit is changed to 15m/s in this version. 
 
-To make Husky go fast, go `/opt/ros/<distro>/share/husky_control/config` and edit control.yaml. 
-
-The setting used is max_v = 15, max_a = 10
+To reflect the same setup in HuskySim, go `/opt/ros/<distro>/share/husky_control/config` and edit control.yaml. The setting used is max_v = 15, max_a = 10
 
 ## Package set up and build
 1. Ensure [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky) are installed, take note of your ROS distro (Ubuntu 18.04 will use Melodic). 
@@ -37,7 +35,9 @@ The setting used is max_v = 15, max_a = 10
 5. `catkin build` and it should work. Remember to `source devel/setup.bash` so your terminal can find the new packages.
 
 ### Issues with package building
-You may want to try and build the package from scratch, follow these steps.
+If you run into issues when building packages, it might be because of the external libraries. Please replace everything in the External folder with [these](https://drive.google.com/drive/u/1/folders/16xUVZtKH77O1hIqJbc8R4slYYIPgZIeA).
+
+If that didn't work, you may want to try and build the package from scratch, follow these steps.
 1. Clone Alex Liniger's MPCC from fullsize branch.
 2. Follow his instructions to build MPCC, verify if it works by running `./MPCC`
 3. Arrange the folders in the ROS template (all files in src, CMakeList.txt is at same level as src)
@@ -55,8 +55,8 @@ roslaunch husky_mpcc husky_mpcc.launch gazebo:=0 rviz:=0 comm:=0 skip:=1
 ```
 
 ## Run full Autonomous Control Pipeline with HuskySim
-1. Ensure the whole HuskyControl package is able to build. Refer to specific package README for instructions if you face issues.
-2. Run the following to begin. It'll launch Gazebo and RViz as well.
+1. Ensure the whole HuskyControl package is able to build. **You may need to build HuskyControl multiple times before it successfully builds everything.** Refer to specific package README for instructions if you face issues.
+2. Run the following to begin. It'll launch HuskySim in Gazebo and RViz.
 ```
 roslaunch husky_mpcc slow2fast.launch
 ``` 
