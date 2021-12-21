@@ -35,9 +35,11 @@ To reflect the same setup in HuskySim, go `/opt/ros/<distro>/share/husky_control
 5. `catkin build` and it should work. Remember to `source devel/setup.bash` so your terminal can find the new packages.
 
 ### Issues with package building
-If you run into issues when building packages, it might be because of the external libraries. Please replace everything in the External folder with [these](https://drive.google.com/drive/u/1/folders/16xUVZtKH77O1hIqJbc8R4slYYIPgZIeA).
+If you run into issues when building packages, try build it again, sometimes it requires multiple builds due to dependencies on other packages. 
 
-If that didn't work, you may want to try and build the package from scratch, follow these steps.
+If it still doesn't work, it might be because of the external libraries. Please replace everything in the External folder with [these](https://drive.google.com/drive/u/1/folders/16xUVZtKH77O1hIqJbc8R4slYYIPgZIeA).
+
+If that still didn't work, you may want to try and build the package from scratch, follow these steps.
 1. Clone Alex Liniger's MPCC from fullsize branch.
 2. Follow his instructions to build MPCC, verify if it works by running `./MPCC`
 3. Arrange the folders in the ROS template (all files in src, CMakeList.txt is at same level as src)
