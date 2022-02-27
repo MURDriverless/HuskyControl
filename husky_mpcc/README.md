@@ -29,10 +29,10 @@ To reflect the same setup in HuskySim, go `/opt/ros/<distro>/share/husky_control
 
 ## Package set up and build
 1. Ensure [Husky Simulator Package](http://wiki.ros.org/husky_gazebo/Tutorials/Simulating%20Husky) and [Husky RVIZ package](http://wiki.ros.org/husky_control/Tutorials/Interfacing%20with%20Husky) are installed, take note of your ROS distro (Ubuntu 18.04 will use Melodic). 
-2. Clone this package to build, you may skip this step if you have cloned the entire HuskyControl package.
+2. Clone this package into your workspace/src folder, you may skip this step if you have cloned the entire HuskyControl package.
 3. Run `sudo ./install.sh` to install dependencies into External folder. If it says file not found, try `sudo chmod +x install.sh` first.
-4. Change directory to reflect the directory you put the files in for `main.cpp` and `Params/config.json`
-5. `catkin build` and it should work. Remember to `source devel/setup.bash` so your terminal can find the new packages.
+4. Change directory in `main.cpp` and `Params/config.json` to reflect the directory you put the files in. Use `pwd` in terminal to get the full directory of the folder you're in.
+5. `catkin build` and it should work. Remember to `source devel/setup.bash` so your terminal can find the new packages. You may need to run multiple `catkin build` before it successfully builds due to dependencies and/or error of previous packages.
 
 ### Issues with package building
 If you run into issues when building packages, try build it again, sometimes it requires multiple builds due to dependencies on other packages. 
