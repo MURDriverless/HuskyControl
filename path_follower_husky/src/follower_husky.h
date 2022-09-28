@@ -45,7 +45,7 @@
 #define FRAME "odom"
 // ROS topics
 #define ODOM_TOPIC "/odometry/filtered"                     //"/mur/slam/Odom" in murSim
-#define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"   
+#define CMDVEL_TOPIC "/mur2022internal/cmd_vel"   
 #define PATH_TOPIC "/mur/planner/path"
 #define PATH_VIZ_TOPIC2 "/mur/follower/path_viz"
 #define FASTLAP_READY_TOPIC "/mur/control/transition"

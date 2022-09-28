@@ -6,7 +6,7 @@
   -->
 
   <arg name="node_start_delay" default="5.0"/>
-  <arg name="gazebo" default="1"/>
+  <arg name="gazebo" default="0"/>
   <arg name="map" default="husky_eufs"/>
   <arg name="rviz" default="true"/>
   <arg name="comm" default="1"/> <!-- Want to communicate with SLAM and stuff -->

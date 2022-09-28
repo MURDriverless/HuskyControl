@@ -5,7 +5,7 @@
  * /odometry/filtered which is from Husky's own EKF-SLAM mapping and localisation
  * 
  * PUBLISHERS
- * /husky_velocity_controller/cmd_vel to control the husky
+ * /mur2022internal/cmd_vel to control the husky
  * 
  * Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com
  * Repo @ https://github.com/MURDriverless/HuskyControl
@@ -22,7 +22,7 @@
 #include <sstream>
 #include <vector>
 
-#define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
+#define CMDVEL_TOPIC "/mur2022internal/cmd_vel"
 #define ODOM_TOPIC "/odometry/filtered"
 
 #define MAXSPD 1.0 // Linear Velocity m/s

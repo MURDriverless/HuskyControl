@@ -32,7 +32,7 @@
 
 #define ODOM_TOPIC "/odometry/filtered"
 #define MAP_TOPIC "/mur/planner/map"
-#define CMDVEL_TOPIC "/husky_velocity_controller/cmd_vel"
+#define CMDVEL_TOPIC "/mur2022internal/cmd_vel"
 #define TRANSITION_TOPIC "/mur/control/transition"
 #define RVIZ_TOPIC "/mpcc_RVIZ_topic"
 #define RVIZ_FRAME "odom" // name of fixed frame in RVIZ

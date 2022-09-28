@@ -5,7 +5,7 @@
  * /odometry/filtered which is from Husky's own EKF-SLAM mapping and localisation
  * 
  * PUBLISHERS
- * /husky_velocity_controller/cmd_vel to control the husky
+ * /mur2022internal/cmd_vel to control the husky
  * 
  * Current Version by Kheng Yu Yeoh, contact @ khengyu_061192@hotmail.com
  * Repo @ https://github.com/MURDriverless/HuskyControl
