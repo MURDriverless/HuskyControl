@@ -6,7 +6,7 @@
   "n_sim": 5000,
   "Ts": 0.05,
   "Hz": 20,
-  "v0": 3.0,
+  "v0": 1.0,
   
   "model_path": "/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/model.json",
   "cost_path": "/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/cost.json",
