@@ -51,6 +51,6 @@ cd ../../hpipm
 mkdir -p build
 mkdir -p lib
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=$(realpath ../lib) -DBLASFEO_PATH=$(realpath ../../blasfeo/lib)
+cmake .. -DCMAKE_INSTALL_PREFIX=$(realpath ../lib) -DBLASFEO_PATH=$(realpath ../../blasfeo/lib) 
 make
 make install
