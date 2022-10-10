@@ -2,7 +2,7 @@
  * ROS Node for Husky Control through Terminal
  * 
  * SUBSCRIPTIONS
- * /odometry/filtered which is from Husky's own EKF-SLAM mapping and localisation
+ * /control_odom from MUR2022
  * 
  * PUBLISHERS
  * /mur2022internal/cmd_vel to control the husky
@@ -16,14 +16,14 @@
 
 #include <ros/ros.h> // Must include for all ROS C++
 #include <geometry_msgs/Twist.h> // To control linear and angular velocity of Husky
-#include <nav_msgs/Odometry.h> // Msg from /odometry/filtered
+#include <nav_msgs/Odometry.h> // Msg from /control_odom
 #include <tf/tf.h> // For Convertion from Quartenion to Euler
 #include <cmath>
 #include <sstream>
 #include <vector>
 
 #define CMDVEL_TOPIC "/mur2022internal/cmd_vel"
-#define ODOM_TOPIC "/odometry/filtered"
+#define ODOM_TOPIC "/control_odom"
 
 #define MAXSPD 1.0 // Linear Velocity m/s
 #define MAXROT 30*M_PI/180 // Rotation Velociy rad/s
@@ -63,7 +63,7 @@ class TerminalControlHusky{
     // Fix angle issues when facing left/west as it fluctuates between pi/-pi
     void unwrapAngle(double& angle);
 
-    // Update Husky's pose when receive from /odometry/filtered
+    // Update Husky's pose when receive from /control_odom
     // topic: ODOM_TOPIC
     // msg type: nav_msgs::Odometry
     void updatePose(const nav_msgs::Odometry& msg);

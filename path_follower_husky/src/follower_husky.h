@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>                // Must include for all ROS C++
 #include <geometry_msgs/Twist.h>    // To control linear and angular velocity of Husky
-#include <nav_msgs/Odometry.h>      // Msg from /odometry/filtered
+#include <nav_msgs/Odometry.h>      // Msg from /control_odom
 #include <tf/tf.h>                  // For Convertion from Quartenion to Euler
 #include "mur_common/path_msg.h"    // path msg from mur_common
 #include "mur_common/transition_msg.h"
@@ -39,12 +39,12 @@
 #define LFV  0.1                     // look forward gain
 #define LFC  2.5                     // look ahead distance 
 #define V_CONST 1.0                  // constant velocity 1m/s (for now)
-#define MAX_V 3                    // for Husky, test only, should be 1m/s to match mur car
+#define MAX_V 1                    // for Husky, test only, should be 1m/s to match mur car
 #define MAX_W 30                     // for Husky, angular velo in degrees
 #define HZ 16                        // ROS spin frequency (can increase to 20)
 #define FRAME "odom"
 // ROS topics
-#define ODOM_TOPIC "/odometry/filtered"                     //"/mur/slam/Odom" in murSim
+#define ODOM_TOPIC "/control_odom"                     //"/mur/slam/Odom" in murSim
 #define CMDVEL_TOPIC "/mur2022internal/cmd_vel"   
 #define PATH_TOPIC "/mur/planner/path"
 #define PATH_VIZ_TOPIC2 "/mur/follower/path_viz"

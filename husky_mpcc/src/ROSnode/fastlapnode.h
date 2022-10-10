@@ -30,7 +30,7 @@
 #include "mur_common/transition_msg.h" // Msg for /mur/control/transition topic
 #include <visualization_msgs/Marker.h> // for RVIZ markers
 
-#define ODOM_TOPIC "/odometry/filtered"
+#define ODOM_TOPIC "/control_odom"
 #define MAP_TOPIC "/mur/planner/map"
 #define CMDVEL_TOPIC "/mur2022internal/cmd_vel"
 #define TRANSITION_TOPIC "/mur/control/transition"

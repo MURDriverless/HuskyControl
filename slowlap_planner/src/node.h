@@ -34,7 +34,7 @@
 #include "path_point.h"                     // path point class
 
 // ROS topics:
-#define HUSKY_ODOM_TOPIC "/odometry/filtered"
+#define HUSKY_ODOM_TOPIC "/control_odom"
 #define MUR_ODOM_TOPIC "/mur/slam/Odom"
 #define CONE_TOPIC "/mur/slam/cones"
 #define PATH_TOPIC "/mur/planner/path"

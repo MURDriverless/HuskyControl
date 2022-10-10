@@ -2,7 +2,7 @@
 #define HUSKY_PATH_FOLLOWER_H
 
 #include <ros/ros.h>                // Must include for all ROS C++
-#include <nav_msgs/Odometry.h>      // Msg from /odometry/filtered
+#include <nav_msgs/Odometry.h>      // Msg from /control_odom
 #include <tf/tf.h>                  // For Convertion from Quartenion to Euler
 #include "mur_common/path_msg.h"    // path msg from mur_common
 #include "mur_common/cone_msg.h"    // cone messages 
@@ -18,7 +18,7 @@
 #include "path_point.h"
 
 // ROS topics
-#define ODOM_TOPIC "/odometry/filtered"                     //"/mur/slam/Odom" in murSim  
+#define ODOM_TOPIC "/control_odom"                     //"/mur/slam/Odom" in murSim  
 #define TRUE_CONES "/mur/slam/true_cones"
 #define CONE_TOPIC "/mur/slam/cones"
 #define RVIZ_CONES "cone_markers_sim"

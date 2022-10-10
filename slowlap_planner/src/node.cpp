@@ -288,7 +288,7 @@ void PlannerNode::odomCallback(const nav_msgs::Odometry &msg)
 // get cone positions (from SLAM)
 void PlannerNode::coneCallback(const mur_common::cone_msg &msg)
 {
-    if (msg.x.size() == 0)
+     if (msg.x.size() == 0)
         cone_msg_received = false;
     else
     {

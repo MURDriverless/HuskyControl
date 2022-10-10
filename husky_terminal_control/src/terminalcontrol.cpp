@@ -2,7 +2,7 @@
  * ROS Node for Husky Control through Terminal
  * 
  * SUBSCRIPTIONS
- * /odometry/filtered which is from Husky's own EKF-SLAM mapping and localisation
+ * /control_odom which is from MUR2022 Perception
  * 
  * PUBLISHERS
  * /mur2022internal/cmd_vel to control the husky
