@@ -294,11 +294,11 @@ void PlannerNode::coneCallback(const mur_common::cone_msg &msg)
     {
         for (int i = 0; i < msg.x.size(); i++)
         {
-            if (msg.colour[i] == "BLUE")
+            if (msg.colour[i].compare("blue") == 0)
             {
             cones.push_back(Cone(msg.x[i], msg.y[i], 'b', i));
             }
-            else if (msg.colour[i] == "YELLOW")
+            else if (msg.colour[i].compare("yellow") == 0)
             {
                 cones.push_back(Cone(msg.x[i], msg.y[i], 'y', i)); 
             }
@@ -306,7 +306,7 @@ void PlannerNode::coneCallback(const mur_common::cone_msg &msg)
             {
                 std::cout << "[PLANNER] 'na' cone colour passed, skipping" << std::endl;
             }
-            else if (msg.colour[i] == "BIG" || msg.colour[i] == "ORANGE")
+            else if (msg.colour[i].compare("BIG") == 0 || msg.colour[i].compare("orange") == 0)
             {
                 cones.push_back(Cone(msg.x[i], msg.y[i], 'r', i));
             }

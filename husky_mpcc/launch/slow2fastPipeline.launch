@@ -7,14 +7,14 @@
 
   <arg name="node_start_delay" default="5.0"/>
   <arg name="gazebo" default="0"/>
-  <arg name="map" default="husky_eufs"/>
-  <arg name="rviz" default="true"/>
+  <arg name="map" default="map"/>
+  <arg name="rviz" default="0"/>
   <arg name="comm" default="1"/> <!-- Want to communicate with SLAM and stuff -->
   <arg name="skip" default="0"/> <!-- Skip to Fast lap directly -->
   <arg name="conesPub" default="false"/>
   <arg name="planner" default="true"/>
-  <arg name="vel" default="1"/>
-  <arg name="ang" default="0.5"/>
+  <arg name="vel" default="0.4"/>
+  <arg name="ang" default="0.15"/>
 
   <!--################ Package #################-->
   <node pkg="husky_mpcc" type="husky_mpcc" name="husky_mpcc" output="screen" 

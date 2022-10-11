@@ -354,6 +354,10 @@ void PathPlanner::addCentrePoints()
 void PathPlanner::addFirstCentrePoints()
 {
 	sortConesByDist(init_pos);		// sort first seen cones by distance
+	if (left_cones.size() == 0 || right_cones.size() == 0){
+		return;
+	}
+	
 	centre_points.emplace_back(
 		(left_cones.front()->position.x + right_cones.front()->position.x) / 2,
 		(left_cones.front()->position.y + right_cones.front()->position.y) / 2
