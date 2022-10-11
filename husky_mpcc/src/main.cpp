@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 
     using namespace mpcc;
     // CHANGE HERE TO CORRECT PATH & ALSO IN Params/config.json
-    std::ifstream iConfig("/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/config.json");
+    std::ifstream iConfig("/media/mur/XavierSSD/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/config.json");
     // std::ifstream iConfig("/media/mur/XavierSSD1/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/config.json");
     json jsonConfig;
     iConfig >> jsonConfig;

@@ -8,9 +8,9 @@
   "Hz": 20,
   "v0": 1.0,
 
-  "model_path": "/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/model.json",
-  "cost_path": "/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/cost.json",
-  "bounds_path": "/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/bounds.json",
-  "track_path": "/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/track.json",
-  "normalization_path": "/home/micah/Documents/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/normalization.json"
+  "model_path": "/media/mur/XavierSSD/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/model.json",
+  "cost_path": "/media/mur/XavierSSD/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/cost.json",
+  "bounds_path": "/media/mur/XavierSSD/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/bounds.json",
+  "track_path": "/media/mur/XavierSSD/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/track.json",
+  "normalization_path": "/media/mur/XavierSSD/mur2022_full_system/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/normalization.json"
 }
