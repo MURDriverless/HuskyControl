@@ -19,11 +19,16 @@
 #include "cone.h"
 #include "path_point.h"
 
-#define TRACKWIDTH 4
-#define MAX_PATH_ANGLE1 50      // angle constraint for the path point formed
-#define MAX_PATH_ANGLE2 310     // angle constraint for the path point formed
-#define MAX_POINT_DIST 6       // distance constraint for path point formed
-#define MIN_POINT_DIST 0.5      // distance constraint for path point formed
+// #define TRACKWIDTH 2.5
+#define TRACKWIDTH 2
+// #define MAX_PATH_ANGLE1 70      // angle constraint for the path point formed. South Lawn
+// #define MAX_PATH_ANGLE2 290     // angle constraint for the path point formed. South Lawn
+#define MAX_PATH_ANGLE1 80      // angle constraint for the path point formed. Courtyard
+#define MAX_PATH_ANGLE2 280     // angle constraint for the path point formed. Courtyard
+// #define MAX_POINT_DIST 5       // distance constraint for path point formed, for South Lawn
+#define MAX_POINT_DIST 4       // For courtyard
+// #define MIN_POINT_DIST 1      // distance constraint for path point formed, for South Lawn
+#define MIN_POINT_DIST 0.75      // For courtyard
 #define CERTAIN_RANGE 4.5         // if cone is within this range, cone positions are certain and no longer updated
 // cost function weights:
 #define W1 2

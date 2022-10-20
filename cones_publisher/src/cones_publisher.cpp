@@ -244,10 +244,10 @@ void ConesPublisher::detectCones()
     for (int i= 0; i<true_cones.size(); i++)
     {
         dist = getDistFromCar(true_cones[i].position);
-        if (dist <= SENSOR_RANGE)
+        if (dist <= SENSOR_RANGE || true_cones[i].colour == 'r')
         {
             angle = getAngleFromCar(true_cones[i].position);
-            if (abs(angle)<90)//(0-180)
+            if (abs(angle)< SENSOR_ANGLE || true_cones[i].colour == 'r')//(0-180)
             {
                 bool added = false;
                 for (auto id:cones_list)

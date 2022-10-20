@@ -13,8 +13,8 @@
   <arg name="skip" default="0"/> <!-- Skip to Fast lap directly -->
   <arg name="conesPub" default="true"/>
   <arg name="planner" default="true"/>
-  <arg name="vel" default="3"/>
-  <arg name="ang" default="1"/>
+  <arg name="vel" default="0.4"/>
+  <arg name="ang" default="0.4"/>
 
   <!--################ Package #################-->
   <node pkg="husky_mpcc" type="husky_mpcc" name="husky_mpcc" output="screen" 

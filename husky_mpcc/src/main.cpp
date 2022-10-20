@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 
     using namespace mpcc;
     // CHANGE HERE TO CORRECT PATH & ALSO IN Params/config.json
-    std::ifstream iConfig("/home/khengyu/catkin_ws/src/HuskyControl/husky_mpcc/src/Params/config.json");
+    std::ifstream iConfig("/home/micah/Documents/Husky/src/HuskyControl/husky_mpcc/src/Params/config.json");
     json jsonConfig;
     iConfig >> jsonConfig;
 
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
                            jsonConfig["track_path"],
                            jsonConfig["normalization_path"]};
 
-    BoundsParam boundParam = BoundsParam(jsonConfig["bounds_path"]);
+    BoundsParam boundParam = BoundsParam((std::string)jsonConfig["bounds_path"]);
     Integrator integrator = Integrator(jsonConfig["Ts"],json_paths);
     Plotting plotter = Plotting(jsonConfig["Ts"],json_paths);
 

@@ -37,7 +37,7 @@
 //pure pursuit gains
 #define K 0.1
 #define LFV  0.1                     // look forward gain
-#define LFC  2.5                     // look ahead distance 
+#define LFC  1.5                    // look ahead distance 
 #define V_CONST 1.0                  // constant velocity 1m/s (for now)
 #define MAX_V 3                    // for Husky, test only, should be 1m/s to match mur car
 #define MAX_W 30                     // for Husky, angular velo in degrees
