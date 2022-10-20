@@ -24,7 +24,7 @@
 #define RVIZ_CONES "cone_markers_sim"
 
 #define SENSOR_RANGE 6
-#define SENSOR_ANGLE 55
+#define SENSOR_ANGLE 90
 #define CERTAIN_RANGE 4.5
 #define HZ 10
 
